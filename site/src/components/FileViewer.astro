@@ -104,7 +104,12 @@ const { label, icon = "file", status } = Astro.props;
     background: var(--color-canvas);
   }
   .fv-body {
-    padding: 32px;
+    padding: 40px 48px;
+  }
+  .fv-body :global(.markdown-body) {
+    max-width: 720px;
+    margin-left: auto;
+    margin-right: auto;
   }
   .fv-status {
     display: flex;
@@ -132,6 +137,6 @@ const { label, icon = "file", status } = Astro.props;
     50.01%, 100% { opacity: 0; }
   }
   @media (max-width: 600px) {
-    .fv-body { padding: 20px; }
+    .fv-body { padding: 24px 20px; }
   }
 </style>
