@@ -2,6 +2,7 @@
 import { getCollection, render } from "astro:content";
 import Layout from "../../layouts/Layout.astro";
 import FileViewer from "../../components/FileViewer.astro";
+import CmdPreamble from "../../components/CmdPreamble.astro";
 import VoteButton from "../../components/VoteButton.astro";
 import { sourceLabel } from "../../utils";
 
@@ -18,13 +19,12 @@ const { Content } = await render(post);
 ---
 
 <Layout title={`${post.data.title} — Frontline`} description={post.data.tldr}>
-  <p class="breadcrumb">
-    <a href="/">posts</a>
-    <span class="sep">/</span>
-    <span class="current">{post.id}.md</span>
-  </p>
-
-  <FileViewer label={`posts/${post.id}.md`} icon="file">
+  <CmdPreamble cmd={`cat posts/${post.id}.md`} />
+  <FileViewer
+    label={`posts/${post.id}.md`}
+    icon="file"
+    status={`-- POST -- ${sourceLabel(post.data.source)}:${post.data.arxiv_id} · ${post.data.read_min} min · ${post.data.tags.map((t) => "#" + t).join(" ")}`}
+  >
     <h1>{post.data.title}</h1>
 
     <blockquote>
@@ -74,6 +74,7 @@ const { Content } = await render(post);
 
 <style>
   .muted { color: var(--color-fg-muted); }
+  .breadcrumb { display: none; }
   .post-vote-row {
     display: flex;
     align-items: center;

@@ -1,16 +1,16 @@
 ---
 import Layout from "../layouts/Layout.astro";
 import FileViewer from "../components/FileViewer.astro";
+import CmdPreamble from "../components/CmdPreamble.astro";
 ---
 
 <Layout title="Про проєкт — Frontline">
-  <p class="breadcrumb">
-    <a href="/">/</a>
-    <span class="sep">/</span>
-    <span class="current">ABOUT.md</span>
-  </p>
-
-  <FileViewer label="ABOUT.md" icon="book">
+  <CmdPreamble cmd="cat ABOUT.md" />
+  <FileViewer
+    label="ABOUT.md"
+    icon="book"
+    status="-- ABOUT -- voice: Фронтлайн знань · auto-publish · open source"
+  >
     <h1>Про Frontline</h1>
 
     <blockquote>
@@ -123,7 +123,8 @@ import FileViewer from "../components/FileViewer.astro";
 </Layout>
 
 <style>
-  .breadcrumb {
+  .breadcrumb { display: none; }
+  ._breadcrumb {
     font-family: ui-monospace, SFMono-Regular, "SF Mono", Consolas, monospace;
     font-size: 14px;
     color: var(--color-fg-muted);

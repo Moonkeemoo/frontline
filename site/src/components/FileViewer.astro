@@ -2,8 +2,10 @@
 interface Props {
   label: string;
   icon?: "book" | "file" | "directory";
+  /** Vim-style status bar at the bottom of the card. e.g. "-- POST -- arXiv:... · 7 min" */
+  status?: string;
 }
-const { label, icon = "file" } = Astro.props;
+const { label, icon = "file", status } = Astro.props;
 ---
 
 <section class="file-viewer">
@@ -43,6 +45,12 @@ const { label, icon = "file" } = Astro.props;
   <div class="fv-body markdown-body">
     <slot />
   </div>
+  {status && (
+    <div class="fv-status" role="status">
+      <span class="fv-status-text">{status}</span>
+      <span class="fv-status-cursor" aria-hidden="true"></span>
+    </div>
+  )}
 </section>
 
 <style>
@@ -65,12 +73,14 @@ const { label, icon = "file" } = Astro.props;
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 500;
     color: var(--color-fg);
     padding: 8px 0;
     border-bottom: 2px solid var(--color-accent);
     margin-bottom: -1px;
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Consolas,
+      "Liberation Mono", Menlo, monospace;
   }
   .fv-icon {
     color: var(--color-fg-muted);
@@ -95,6 +105,31 @@ const { label, icon = "file" } = Astro.props;
   }
   .fv-body {
     padding: 32px;
+  }
+  .fv-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--color-canvas-subtle);
+    border-top: 1px solid var(--color-border);
+    padding: 6px 16px;
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Consolas,
+      "Liberation Mono", Menlo, monospace;
+    font-size: 12px;
+    color: var(--color-fg-muted);
+    letter-spacing: 0.02em;
+  }
+  .fv-status-text { white-space: pre-wrap; }
+  .fv-status-cursor {
+    display: inline-block;
+    width: 6px;
+    height: 11px;
+    background: var(--color-success);
+    animation: status-blink 1.1s step-end infinite;
+  }
+  @keyframes status-blink {
+    0%, 50% { opacity: 1; }
+    50.01%, 100% { opacity: 0; }
   }
   @media (max-width: 600px) {
     .fv-body { padding: 20px; }

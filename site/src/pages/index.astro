@@ -2,6 +2,7 @@
 import { getCollection } from "astro:content";
 import Layout from "../layouts/Layout.astro";
 import FileViewer from "../components/FileViewer.astro";
+import CmdPreamble from "../components/CmdPreamble.astro";
 import VoteButton from "../components/VoteButton.astro";
 import { sourceLabel } from "../utils";
 
@@ -49,7 +50,12 @@ const groupedEntries = Array.from(grouped.entries()).sort(
 ---
 
 <Layout>
-  <FileViewer label="README.md" icon="book">
+  <CmdPreamble cmd="cat README.md" />
+  <FileViewer
+    label="README.md"
+    icon="book"
+    status={`-- README -- ${posts.length} posts · ${groupedEntries.length} categories · auto-curated`}
+  >
     <h1>Frontline</h1>
 
     <blockquote>
@@ -78,14 +84,16 @@ const groupedEntries = Array.from(grouped.entries()).sort(
     ) : (
       <>
         <div class="filter-bar" role="group" aria-label="Часовий період">
-          <button class="filter-chip" data-period="today" type="button">Сьогодні</button>
-          <button class="filter-chip" data-period="week" type="button">Тиждень</button>
-          <button class="filter-chip" data-period="2weeks" type="button">2 тижні</button>
-          <button class="filter-chip" data-period="month" type="button">Місяць</button>
-          <button class="filter-chip active" data-period="all" type="button">Все</button>
-          <span class="filter-hint">·</span>
-          <button class="filter-chip" data-sort="date" type="button">за датою</button>
-          <button class="filter-chip" data-sort="votes" type="button">за голосами</button>
+          <span class="filter-flag-prefix">--period</span>
+          <button class="filter-chip" data-period="today" type="button">today</button>
+          <button class="filter-chip" data-period="week" type="button">week</button>
+          <button class="filter-chip" data-period="2weeks" type="button">2weeks</button>
+          <button class="filter-chip" data-period="month" type="button">month</button>
+          <button class="filter-chip active" data-period="all" type="button">all</button>
+          <span class="filter-hint">|</span>
+          <span class="filter-flag-prefix">--sort</span>
+          <button class="filter-chip" data-sort="date" type="button">date</button>
+          <button class="filter-chip" data-sort="votes" type="button">votes</button>
         </div>
 
         <p id="empty-state" class="empty-state" hidden>
@@ -260,14 +268,14 @@ const groupedEntries = Array.from(grouped.entries()).sort(
     border-bottom: 1px solid var(--color-border-muted);
   }
   .filter-chip {
-    padding: 4px 12px;
+    padding: 3px 10px;
     background: var(--color-canvas);
     border: 1px solid var(--color-border);
-    border-radius: 2em;
-    font-size: 13px;
+    border-radius: 4px;
+    font-size: 12px;
     color: var(--color-fg-muted);
     cursor: pointer;
-    font-family: inherit;
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Consolas, monospace;
     transition: all 0.15s;
   }
   .filter-chip:hover {
@@ -279,10 +287,17 @@ const groupedEntries = Array.from(grouped.entries()).sort(
     color: var(--color-canvas);
     border-color: var(--color-fg);
   }
+  .filter-flag-prefix {
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Consolas, monospace;
+    font-size: 12px;
+    color: var(--color-success);
+    margin-right: -2px;
+  }
   .filter-hint {
     color: var(--color-fg-muted);
-    margin: 0 4px;
+    margin: 0 6px;
     opacity: 0.5;
+    font-family: ui-monospace, monospace;
   }
 
   .empty-state {

@@ -2,6 +2,7 @@
 import { getCollection } from "astro:content";
 import Layout from "../../layouts/Layout.astro";
 import FileViewer from "../../components/FileViewer.astro";
+import CmdPreamble from "../../components/CmdPreamble.astro";
 import { sourceLabel } from "../../utils";
 
 const items = (await getCollection("queue")).sort(
@@ -12,13 +13,12 @@ const items = (await getCollection("queue")).sort(
 ---
 
 <Layout title="Черга на ревʼю — Frontline">
-  <p class="breadcrumb">
-    <a href="/">/</a>
-    <span class="sep">/</span>
-    <span class="current">queue/</span>
-  </p>
-
-  <FileViewer label="queue/" icon="directory">
+  <CmdPreamble cmd="ls queue/" />
+  <FileViewer
+    label="queue/"
+    icon="directory"
+    status={`-- QUEUE -- ${items.length} items pending review`}
+  >
     <h1>Черга на ревʼю</h1>
 
     <p>
@@ -90,7 +90,8 @@ const items = (await getCollection("queue")).sort(
 </Layout>
 
 <style>
-  .breadcrumb {
+  .breadcrumb { display: none; }
+  ._breadcrumb {
     font-family: ui-monospace, SFMono-Regular, "SF Mono", Consolas, monospace;
     font-size: 14px;
     color: var(--color-fg-muted);

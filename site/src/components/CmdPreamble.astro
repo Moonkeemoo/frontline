@@ -1,0 +1,16 @@
+---
+interface Props {
+  /** The command after the $, e.g. "cat README.md" */
+  cmd: string;
+  /** Optional path shown in prompt; defaults to ~/frontline */
+  path?: string;
+}
+const { cmd, path = "~/frontline" } = Astro.props;
+---
+
+<p class="cmd-preamble" aria-hidden="true">
+  <span class="prompt-user">taras</span><span class="prompt-host"
+    >@frontline</span
+  >:<span class="prompt-path">{path}</span><span class="prompt-sigil">$</span><span
+    class="cmd">{cmd}</span>
+</p>

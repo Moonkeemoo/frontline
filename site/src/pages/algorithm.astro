@@ -4,6 +4,7 @@ import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import Layout from "../layouts/Layout.astro";
 import FileViewer from "../components/FileViewer.astro";
+import CmdPreamble from "../components/CmdPreamble.astro";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const logPath = resolve(__dirname, "../../../pipeline/data/published.jsonl");
@@ -44,13 +45,12 @@ stats.costPerPaper =
 ---
 
 <Layout title="Алгоритм відбору — Frontline">
-  <p class="breadcrumb">
-    <a href="/">/</a>
-    <span class="sep">/</span>
-    <span class="current">ALGORITHM.md</span>
-  </p>
-
-  <FileViewer label="ALGORITHM.md" icon="book">
+  <CmdPreamble cmd="cat ALGORITHM.md" />
+  <FileViewer
+    label="ALGORITHM.md"
+    icon="book"
+    status={`-- ALGORITHM -- ${stats.total} processed · ${stats.published} published · $${stats.totalCost.toFixed(2)} spend`}
+  >
     <h1>Алгоритм відбору статей</h1>
 
     <blockquote>
@@ -421,7 +421,8 @@ publish/    queue/    reject
 </Layout>
 
 <style>
-  .breadcrumb {
+  .breadcrumb { display: none; }
+  ._breadcrumb {
     font-family: ui-monospace, SFMono-Regular, "SF Mono", Consolas, monospace;
     font-size: 14px;
     color: var(--color-fg-muted);
