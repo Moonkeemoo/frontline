@@ -14,7 +14,17 @@ Source = Literal[
 ]
 Severity = Literal["high", "medium", "low"]
 IssueCategory = Literal[
-    "hallucination", "glossary", "why_matters", "tone", "grammar", "format"
+    "hallucination",
+    "glossary",
+    "why_matters",
+    "tone",
+    "grammar",
+    "format",
+    # Added in non-tech-friendly voice update:
+    "jargon",
+    "long_paragraph",
+    "long_sentence",
+    "missing_bold",
 ]
 Verdict = Literal["ok", "needs_review", "reject"]
 Recommendation = Literal["publish", "queue_for_review", "regenerate"]
