@@ -66,22 +66,23 @@ import FileViewer from "../components/FileViewer.astro";
     <ol>
       <li>
         <strong>Generate</strong> (Claude Sonnet) — читає abstract, повертає
-        структурований JSON: <code>title_ua</code>, <code>tldr_ua</code>,
-        <code>what_they_did_ua</code>, <code>why_matters_ua</code>,
-        <code>limitations_ua</code>, <code>tags</code>.
+        структурований JSON.
       </li>
       <li>
         <strong>Critique</strong> (Claude Opus, інша модель) — перевіряє переклад
-        на 6 категорій помилок: hallucination, glossary violation, generic
-        why_matters, hype tone, граматика, format. Повертає verdict
+        на 6 категорій помилок. Повертає verdict
         (<code>ok</code> / <code>needs_review</code> / <code>reject</code>).
       </li>
       <li>
-        <strong>Publish</strong> — якщо <code>ok</code>, пост летить на сайт + у
-        Telegram. Якщо <code>needs_review</code> — у <a href="/queue/">чергу</a>.
-        Якщо <code>reject</code> — викидаємо.
+        <strong>Publish</strong> — якщо <code>ok</code>, пост на сайт + Telegram.
+        Інакше — <a href="/queue/">черга</a> або викидається.
       </li>
     </ol>
+
+    <p>
+      Повний 7-етапний алгоритм відбору з живою статистикою —{" "}
+      <a href="/algorithm/">ALGORITHM.md</a>.
+    </p>
 
     <h2>Що ми НЕ робимо</h2>
     <ul>

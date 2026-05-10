@@ -1,0 +1,370 @@
+---
+import { readFileSync } from "node:fs";
+import { resolve, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+import Layout from "../layouts/Layout.astro";
+import FileViewer from "../components/FileViewer.astro";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const logPath = resolve(__dirname, "../../../pipeline/data/published.jsonl");
+
+interface LogEntry {
+  arxiv_id: string;
+  verdict: string | null;
+  recommendation: string | null;
+  published: boolean;
+  cost_usd: number;
+  error: string | null;
+  logged_at: string;
+}
+
+let entries: LogEntry[] = [];
+try {
+  entries = readFileSync(logPath, "utf-8")
+    .split("\n")
+    .filter((l) => l.trim())
+    .map((l) => JSON.parse(l));
+} catch {
+  // log file may not exist yet
+}
+
+const stats = {
+  total: entries.length,
+  published: entries.filter((e) => e.published).length,
+  queued: entries.filter((e) => e.recommendation === "queue_for_review").length,
+  rejected: entries.filter(
+    (e) => e.recommendation === "regenerate" && !e.error,
+  ).length,
+  errors: entries.filter((e) => e.error).length,
+  totalCost: entries.reduce((s, e) => s + (e.cost_usd || 0), 0),
+  costPerPaper: 0,
+};
+stats.costPerPaper =
+  stats.total > 0 ? stats.totalCost / stats.total : 0;
+---
+
+<Layout title="Алгоритм відбору — Frontline">
+  <p class="breadcrumb">
+    <a href="/">/</a>
+    <span class="sep">/</span>
+    <span class="current">ALGORITHM.md</span>
+  </p>
+
+  <FileViewer label="ALGORITHM.md" icon="book">
+    <h1>Алгоритм відбору статей</h1>
+
+    <blockquote>
+      Як з ~70 свіжих CS-пейперів за день стає 5-10 опублікованих українською.
+      Прозоро. Без чорних скриньок.
+    </blockquote>
+
+    <h2>Поточна статистика</h2>
+
+    <p>Жива метрика з <code>pipeline/data/published.jsonl</code>:</p>
+
+    <table>
+      <thead>
+        <tr><th>Метрика</th><th>Значення</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Усього пейперів пройшло pipeline</td><td><strong>{stats.total}</strong></td></tr>
+        <tr><td>Опубліковано (verdict=ok)</td><td>{stats.published}</td></tr>
+        <tr><td>У черзі на ревʼю (needs_review)</td><td>{stats.queued}</td></tr>
+        <tr><td>Відхилено (reject)</td><td>{stats.rejected}</td></tr>
+        <tr><td>Помилки pipeline</td><td>{stats.errors}</td></tr>
+        <tr><td>Сумарна вартість LLM API</td><td><code>${stats.totalCost.toFixed(4)}</code></td></tr>
+        <tr><td>Середня вартість на пейпер</td><td><code>${stats.costPerPaper.toFixed(4)}</code></td></tr>
+      </tbody>
+    </table>
+
+    <h2>Pipeline у 7 етапів</h2>
+
+    <pre><code>{`┌─────────────────────────────────────────────────────────────┐
+│  1. INGEST     ~71 кандидатів   (HF + 28 arXiv + IACR)     │
+└──────────────┬──────────────────────────────────────────────┘
+               ↓
+┌──────────────┴──────────────────────────────────────────────┐
+│  2. DEDUP      ~50 унікальних   (за arxiv_id, HF-first)    │
+└──────────────┬──────────────────────────────────────────────┘
+               ↓
+┌──────────────┴──────────────────────────────────────────────┐
+│  3. FILTER     відсікаємо вже-бачене (published.jsonl)     │
+└──────────────┬──────────────────────────────────────────────┘
+               ↓
+┌──────────────┴──────────────────────────────────────────────┐
+│  4. CAP        перші N (default 10)                         │
+└──────────────┬──────────────────────────────────────────────┘
+               ↓
+┌──────────────┴──────────────────────────────────────────────┐
+│  5. GENERATE   Claude Sonnet → JSON (title/tldr/...)       │
+└──────────────┬──────────────────────────────────────────────┘
+               ↓
+┌──────────────┴──────────────────────────────────────────────┐
+│  6. CRITIQUE   Claude Opus → verdict {ok|needs_review|...} │
+└──────────────┬──────────────────────────────────────────────┘
+               ↓
+   ┌───────────┼───────────┐
+   ▼           ▼           ▼
+publish/    queue/    reject
+(сайт+TG)   (ревʼю)   (лог)`}</code></pre>
+
+    <h2>Етап 1 — Ingest</h2>
+
+    <p>
+      Pipeline стягує паралельно (asyncio.gather) з усіх джерел. Source
+      failures логуються, але не зривають весь run.
+    </p>
+
+    <table>
+      <thead>
+        <tr><th>Джерело</th><th>URL</th><th>Ліміт</th><th>Сигнал</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>HuggingFace Daily</strong></td>
+          <td><code>api/daily_papers</code></td>
+          <td>10</td>
+          <td>ML-спільнота голосує (curated)</td>
+        </tr>
+        <tr>
+          <td><strong>arXiv RSS</strong></td>
+          <td><code>rss/&lt;cat&gt;</code></td>
+          <td>2 × 28 = 56</td>
+          <td>Свіжі за recency, без curation</td>
+        </tr>
+        <tr>
+          <td><strong>IACR ePrint</strong></td>
+          <td><code>rss/rss.xml</code></td>
+          <td>5</td>
+          <td>Криптографія, daily</td>
+        </tr>
+        <tr>
+          <td colspan="2"><strong>Всього</strong></td>
+          <td><strong>~71</strong></td>
+          <td></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p>
+      Реалізація: <a
+        href="https://github.com/Moonkeemoo/frontline/blob/main/pipeline/ingest.py"
+        target="_blank"
+        rel="noopener"><code>pipeline/ingest.py</code></a> →{" "}
+      <code>fetch_all_sources()</code>.
+    </p>
+
+    <h2>Етап 2 — Дедуплікація</h2>
+
+    <ul>
+      <li><strong>Ключ:</strong> <code>arxiv_id</code> (для IACR — формат <code>YYYY/NNNN</code>)</li>
+      <li>
+        <strong>Правило:</strong> перший кандидат з даним id зберігається,
+        наступні відкидаються
+      </li>
+      <li>
+        <strong>Порядок джерел:</strong> HuggingFace → arXiv (категорії в
+        порядку <code>DEFAULT_ARXIV_CATEGORIES</code>) → IACR
+      </li>
+      <li>
+        <strong>Чому HF-first:</strong> це curation-сигнал від ML-спільноти,
+        вищий за recency
+      </li>
+    </ul>
+
+    <h2>Етап 3 — Фільтр «вже бачили»</h2>
+
+    <p>
+      Для кожного кандидата перевіряємо <code>arxiv_id</code> проти
+      append-only логу <code>published.jsonl</code>. Skip якщо вже там — не
+      залежно від попереднього verdict-у. Це гарантує idempotency: один пейпер
+      обробляється LLM рівно один раз.
+    </p>
+
+    <p>
+      Реалізація: <a
+        href="https://github.com/Moonkeemoo/frontline/blob/main/pipeline/log.py"
+        target="_blank"
+        rel="noopener"><code>pipeline/log.py</code></a> →{" "}
+      <code>PublishedLog.already_seen()</code>.
+    </p>
+
+    <h2>Етап 4 — Cap</h2>
+
+    <ul>
+      <li><strong>Default:</strong> <code>FRONTLINE_DAILY_PAPER_LIMIT=10</code></li>
+      <li>
+        <strong>Cost cap:</strong> якщо <code>FRONTLINE_DAILY_COST_CAP_USD</code>
+        вичерпаний на половині — pipeline зупиняється і логує
+      </li>
+      <li>Беремо перші N після dedup + filter</li>
+    </ul>
+
+    <div class="alert alert-attention">
+      <strong>⚠ Обмеження поточної логіки</strong>
+      Якщо HF Daily має 10+ якісних пейперів — всі N=10 слотів йдуть туди,
+      arXiv-overflow не доходить до LLM. У реальних запусках pipeline
+      обробляв переважно HF-папери. Plan V2: інтерлівати джерела для
+      topic diversity або вводити окремі квоти.
+    </div>
+
+    <h2>Етап 5 — Generate (Sonnet)</h2>
+
+    <p>
+      Claude Sonnet 4.6 отримує: paper-метадата + abstract + glossary.
+      Промпт: <a
+        href="https://github.com/Moonkeemoo/frontline/blob/main/prompts/generate.md"
+        target="_blank"
+        rel="noopener"><code>prompts/generate.md</code></a>.
+    </p>
+
+    <p>Output — строгий JSON:</p>
+    <ul>
+      <li><code>title_ua</code>, <code>tldr_ua</code> (≤60 слів)</li>
+      <li><code>what_they_did_ua</code> (~150-250 слів)</li>
+      <li><code>why_matters_ua</code> — <strong>ОБОВʼЯЗКОВО 2-3 конкретні UA-IT use-case-и</strong></li>
+      <li><code>limitations_ua</code> (≥1 пункт)</li>
+      <li><code>tags</code> (2-5 тегів, lowercase англ.)</li>
+    </ul>
+
+    <h2>Етап 6 — Critique (Opus)</h2>
+
+    <p>
+      Claude Opus 4.7 (інша модель!) перевіряє summary проти 6 категорій:
+    </p>
+
+    <table>
+      <thead>
+        <tr><th>Категорія</th><th>Перевіряє</th><th>Severity</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>hallucination</code></td><td>Цифри/факти яких немає в abstract</td><td>high</td></tr>
+        <tr><td><code>format</code></td><td>Невалідний JSON, відсутні поля</td><td>high</td></tr>
+        <tr><td><code>glossary</code></td><td>Терміни перекладено всупереч glossary.yaml</td><td>medium</td></tr>
+        <tr><td><code>why_matters</code></td><td>Загальні фрази без UA-IT-конкретики</td><td>medium</td></tr>
+        <tr><td><code>tone</code></td><td>«Революція», хайп, sensationalism</td><td>medium</td></tr>
+        <tr><td><code>grammar</code></td><td>UA-граматика, калькування з англ.</td><td>low/medium</td></tr>
+      </tbody>
+    </table>
+
+    <p>
+      Промпт: <a
+        href="https://github.com/Moonkeemoo/frontline/blob/main/prompts/critique.md"
+        target="_blank"
+        rel="noopener"><code>prompts/critique.md</code></a>.
+    </p>
+
+    <h2>Етап 7 — Routing</h2>
+
+    <table>
+      <thead>
+        <tr><th>Verdict</th><th>Recommendation</th><th>Action</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>ok</code></td>
+          <td><code>publish</code></td>
+          <td>Markdown у <code>site/src/content/posts/</code> + Telegram-пост</td>
+        </tr>
+        <tr>
+          <td><code>needs_review</code></td>
+          <td><code>queue_for_review</code></td>
+          <td>Markdown у <a href="/queue/"><code>queue/</code></a> для людської перевірки</td>
+        </tr>
+        <tr>
+          <td><code>reject</code></td>
+          <td><code>regenerate</code></td>
+          <td>Логуємо і викидаємо. <strong>Не публікуємо нічого.</strong></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p>
+      Verdict-rule: <code>ok</code> → 0 medium+ issues. <code>needs_review</code>
+      → 1+ medium. <code>reject</code> → 1+ high.
+    </p>
+
+    <h2>Що алгоритм НЕ робить (і чому)</h2>
+
+    <ul>
+      <li>
+        <strong>Не ранкує по якості пейперів</strong> — beyond source priority.
+        HF curation і arXiv-recency — наші єдині сигнали. Citation count, h-index
+        авторів — поки не використовуємо.
+      </li>
+      <li>
+        <strong>Не вирівнює topic diversity</strong> — за день може бути 10 LLM-пейперів
+        поспіль. Категорії на /home — це лише UI-групування post-hoc.
+      </li>
+      <li>
+        <strong>Не reрегенерує rejected пейпери</strong> — за принципом «краще
+        тиша ніж лажа». Реджект з <code>regenerate_feedback</code> просто
+        логується.
+      </li>
+      <li>
+        <strong>Не peer-review-ить опубліковані пости</strong> — після auto-publish
+        єдиний контроль — community-feedback через issue.
+      </li>
+      <li>
+        <strong>Не персоналізує</strong> — стрічка одна для всіх читачів.
+      </li>
+    </ul>
+
+    <h2>Конфігурація через env</h2>
+
+    <table>
+      <thead>
+        <tr><th>Змінна</th><th>Default</th><th>Що робить</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>FRONTLINE_DAILY_PAPER_LIMIT</code></td>
+          <td><code>10</code></td>
+          <td>Cap на кількість пейперів через LLM на день</td>
+        </tr>
+        <tr>
+          <td><code>FRONTLINE_DAILY_COST_CAP_USD</code></td>
+          <td><code>1.0</code></td>
+          <td>Hard stop при перевищенні</td>
+        </tr>
+        <tr>
+          <td><code>FRONTLINE_MODEL_GENERATE</code></td>
+          <td><code>claude-sonnet-4-6</code></td>
+          <td>Модель для STAGE 5</td>
+        </tr>
+        <tr>
+          <td><code>FRONTLINE_MODEL_CRITIQUE</code></td>
+          <td><code>claude-opus-4-7</code></td>
+          <td>Модель для STAGE 6 (мусить відрізнятися від generate)</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <hr />
+
+    <p>
+      Усе живе у відкритому коді —{" "}
+      <a
+        href="https://github.com/Moonkeemoo/frontline"
+        target="_blank"
+        rel="noopener">github.com/Moonkeemoo/frontline</a>. Якщо щось здається
+      непрозорим або кривим — <a
+        href="https://github.com/Moonkeemoo/frontline/issues/new"
+        target="_blank"
+        rel="noopener">issue</a>.
+    </p>
+  </FileViewer>
+</Layout>
+
+<style>
+  .breadcrumb {
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Consolas, monospace;
+    font-size: 14px;
+    color: var(--color-fg-muted);
+    margin: 0 0 12px;
+  }
+  .breadcrumb a { color: var(--color-link); text-decoration: none; }
+  .breadcrumb a:hover { text-decoration: underline; }
+  .breadcrumb .sep { margin: 0 6px; opacity: 0.5; }
+  .breadcrumb .current { color: var(--color-fg); }
+</style>
