@@ -1,0 +1,84 @@
+---
+import Layout from "../layouts/Layout.astro";
+---
+
+<Layout title="Про проєкт — Frontline">
+  <article class="about">
+    <h1>Про Frontline</h1>
+
+    <p class="lead">
+      Свіжі AI/ML дослідження українською — TL;DR, прикладний контекст для
+      українського IT-сектора, лінк на першоджерело.
+    </p>
+
+    <h2>Як це працює</h2>
+    <p>
+      Щоранку pipeline бере топ-добірку з{" "}
+      <a href="https://huggingface.co/papers" target="_blank" rel="noopener">
+        HuggingFace Papers
+      </a>{" "}
+      і{" "}
+      <a href="https://arxiv.org" target="_blank" rel="noopener">
+        arXiv
+      </a>. Для кожного пейпера мовна модель (Claude Sonnet) генерує українське
+      резюме, а друга модель (Claude Opus) перевіряє переклад на термінологічні
+      ляпи та галюцинації. Лише чисті резюме автоматично публікуються тут і в
+      Telegram-каналі.
+    </p>
+
+    <h2>Що ми НЕ робимо</h2>
+    <ul>
+      <li>Не перекладаємо самі пейпери — лише резюме з лінком на оригінал.</li>
+      <li>Не вигадуємо цифри та результати — все береться з абстракту.</li>
+      <li>Не кажемо «революція» і «прорив» — лише факти.</li>
+      <li>Не перекладаємо англомовні терміни без усталеного UA-аналога.</li>
+    </ul>
+
+    <h2>Voice — «Фронтлайн знань»</h2>
+    <p>
+      Технічно точно, без хайпу. Якщо термін має усталений український
+      переклад (трансформер, нейронна мережа, перенавчання) — використовуємо
+      його. Якщо ні (<em>embedding</em>, <em>attention</em>, <em>fine-tuning</em>) — лишаємо
+      англійською в курсиві. Це джерело істини —{" "}
+      <a
+        href="https://github.com/Moonkeemoo/frontline/blob/main/pipeline/glossary.yaml"
+        target="_blank"
+        rel="noopener"
+      >
+        glossary.yaml
+      </a>{" "}
+      у відкритому репозиторії.
+    </p>
+
+    <h2>Допоможи</h2>
+    <p>
+      Знайшов помилку перекладу або хибне твердження? Натисни «Повідомити нам»
+      під будь-яким постом, або створи{" "}
+      <a
+        href="https://github.com/Moonkeemoo/frontline/issues/new"
+        target="_blank"
+        rel="noopener"
+      >
+        issue на GitHub
+      </a>.
+    </p>
+
+    <h2>Ціль</h2>
+    <p>
+      Зробити так, щоб українські IT-інженери, студенти та засновники мали одне
+      місце, де можна швидко зорієнтуватись у потоці AI/ML досліджень
+      українською — і знаходити ідеї, на яких можна побудувати наступне рішення.
+    </p>
+  </article>
+</Layout>
+
+<style>
+  .about {
+    max-width: 700px;
+  }
+  .lead {
+    color: var(--fg-muted);
+    font-size: 1.15rem;
+    margin-bottom: 2rem;
+  }
+</style>

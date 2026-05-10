@@ -50,7 +50,7 @@ jobs:
           FRONTLINE_DRY_RUN: ${{ inputs.dry_run && 'true' || 'false' }}
         run: |
           uv run python -m pipeline.run \
-            --output-dir site/content/posts \
+            --output-dir site/src/content/posts \
             --queue-dir .runs/queue \
             --log-path pipeline/data/published.jsonl
 
@@ -59,7 +59,7 @@ jobs:
         run: |
           git config user.name "frontline-bot"
           git config user.email "bot@frontline.local"
-          git add site/content/posts/ pipeline/data/ .runs/queue/ 2>/dev/null || true
+          git add site/src/content/posts/ pipeline/data/ .runs/queue/ 2>/dev/null || true
           if git diff --cached --quiet; then
             echo "::notice::No new content this run."
           else

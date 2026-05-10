@@ -30,9 +30,10 @@ htmlcov/
 dist/
 build/
 
-# Site (Phase 1.5+)
+# Astro site
 site/dist/
 site/.astro/
+site/node_modules/
 node_modules/
 
 # Local pipeline runs

@@ -1,0 +1,130 @@
+---
+import { getCollection } from "astro:content";
+import Layout from "../layouts/Layout.astro";
+
+const posts = (await getCollection("posts")).sort(
+  (a, b) =>
+    new Date(b.data.publish_date).getTime() -
+    new Date(a.data.publish_date).getTime(),
+);
+---
+
+<Layout>
+  <section class="hero">
+    <h1>Свіжі AI/ML дослідження українською</h1>
+    <p class="lead">
+      TL;DR, контекст для українського IT-сектора, лінк на оригінал. Автоматично
+      курується щодня з arXiv та HuggingFace Papers.
+    </p>
+  </section>
+
+  <section class="posts">
+    {posts.length === 0 && (
+      <p class="muted">Поки що пусто — pipeline ще не запустився сьогодні.</p>
+    )}
+    {posts.map((post) => (
+      <article class="post-card">
+        <a href={`/posts/${post.id}/`} class="post-link">
+          <header>
+            <h2>{post.data.title}</h2>
+            <div class="meta">
+              <span class="arxiv">arXiv:{post.data.arxiv_id}</span>
+              <span class="dot">·</span>
+              <span>{post.data.read_min} хв</span>
+              <span class="dot">·</span>
+              <span>{post.data.publish_date}</span>
+            </div>
+          </header>
+          <p class="tldr">{post.data.tldr}</p>
+          <div class="tags">
+            {post.data.tags.map((tag) => (
+              <span class="tag">#{tag}</span>
+            ))}
+          </div>
+        </a>
+      </article>
+    ))}
+  </section>
+</Layout>
+
+<style>
+  .hero {
+    margin-bottom: 3rem;
+  }
+  .hero h1 {
+    font-size: 2.4rem;
+    margin-bottom: 0.75rem;
+  }
+  .lead {
+    color: var(--fg-muted);
+    font-size: 1.1rem;
+    line-height: 1.5;
+    max-width: 600px;
+  }
+
+  .posts {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .post-card {
+    border-top: 1px solid var(--border);
+    padding: 2rem 0;
+  }
+  .post-card:last-child {
+    border-bottom: 1px solid var(--border);
+  }
+
+  .post-link {
+    display: block;
+    color: inherit;
+    text-decoration: none;
+  }
+  .post-link:hover h2 {
+    color: var(--accent);
+  }
+
+  .post-card h2 {
+    font-size: 1.4rem;
+    margin: 0 0 0.5rem;
+    border-top: none;
+    padding-top: 0;
+    transition: color 0.15s;
+  }
+
+  .meta {
+    color: var(--fg-muted);
+    font-size: 0.85rem;
+    margin-bottom: 1rem;
+    font-family: "JetBrains Mono", monospace;
+  }
+  .meta .arxiv {
+    color: var(--accent);
+  }
+  .meta .dot {
+    margin: 0 0.5rem;
+    opacity: 0.5;
+  }
+
+  .tldr {
+    font-size: 1rem;
+    color: var(--fg);
+    margin-bottom: 1rem;
+  }
+
+  .tags {
+    display: flex;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+  }
+  .tag {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.8rem;
+    color: var(--fg-muted);
+    background: var(--bg-elev);
+    padding: 0.15rem 0.5rem;
+    border-radius: 3px;
+    border: 1px solid var(--border);
+  }
+</style>

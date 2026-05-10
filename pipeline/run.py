@@ -131,7 +131,7 @@ def main(argv: list[str] | None = None) -> int:
     load_dotenv()
 
     parser = argparse.ArgumentParser(prog="frontline", description="Frontline pipeline")
-    parser.add_argument("--output-dir", type=Path, default=Path("site/content/posts"))
+    parser.add_argument("--output-dir", type=Path, default=Path("site/src/content/posts"))
     parser.add_argument("--queue-dir", type=Path, default=Path(".runs/queue"))
     parser.add_argument(
         "--log-path", type=Path, default=Path("pipeline/data/published.jsonl")

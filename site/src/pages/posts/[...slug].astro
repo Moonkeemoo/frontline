@@ -1,0 +1,165 @@
+---
+import { getCollection, render } from "astro:content";
+import Layout from "../../layouts/Layout.astro";
+
+export async function getStaticPaths() {
+  const posts = await getCollection("posts");
+  return posts.map((post) => ({
+    params: { slug: post.id },
+    props: { post },
+  }));
+}
+
+const { post } = Astro.props;
+const { Content } = await render(post);
+---
+
+<Layout title={`${post.data.title} — Frontline`} description={post.data.tldr}>
+  <article class="post">
+    <header class="post-header">
+      <div class="meta-row">
+        <a href="/" class="back-link">← Стрічка</a>
+        <span class="meta">
+          <span class="arxiv">arXiv:{post.data.arxiv_id}</span>
+          <span class="dot">·</span>
+          <span>{post.data.read_min} хв читання</span>
+          <span class="dot">·</span>
+          <span>{post.data.publish_date}</span>
+        </span>
+      </div>
+      <h1>{post.data.title}</h1>
+      <p class="tldr">{post.data.tldr}</p>
+      <div class="tags">
+        {post.data.tags.map((tag) => (
+          <span class="tag">#{tag}</span>
+        ))}
+      </div>
+      <div class="authors">
+        <span class="muted">Автори:</span>
+        {post.data.authors.join(", ")}
+      </div>
+    </header>
+
+    <div class="post-body">
+      <Content />
+    </div>
+
+    <footer class="post-footer">
+      <a class="cta" href={post.data.arxiv_url} target="_blank" rel="noopener">
+        Читати оригінал на arXiv ↗
+      </a>
+      <p class="report muted">
+        Знайшли неточність у перекладі чи термінах?{" "}
+        <a
+          href={`https://github.com/Moonkeemoo/frontline/issues/new?title=Translation+issue:+${post.data.arxiv_id}&body=Post:+${post.id}%0A%0AIssue:+`}
+          target="_blank"
+          rel="noopener"
+        >
+          Повідомте нам
+        </a>
+      </p>
+    </footer>
+  </article>
+</Layout>
+
+<style>
+  .post {
+    max-width: 700px;
+    margin: 0 auto;
+  }
+
+  .post-header {
+    margin-bottom: 3rem;
+  }
+
+  .meta-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+  .back-link {
+    color: var(--fg-muted);
+    text-decoration: none;
+    font-size: 0.9rem;
+  }
+  .back-link:hover { color: var(--accent); }
+
+  .meta {
+    color: var(--fg-muted);
+    font-size: 0.85rem;
+    font-family: "JetBrains Mono", monospace;
+  }
+  .meta .arxiv { color: var(--accent); }
+  .meta .dot { margin: 0 0.5rem; opacity: 0.5; }
+
+  h1 {
+    font-size: 2.2rem;
+    margin: 0 0 1rem;
+    line-height: 1.2;
+  }
+
+  .tldr {
+    font-size: 1.15rem;
+    color: var(--fg);
+    line-height: 1.5;
+    padding: 1.25rem;
+    background: var(--bg-elev);
+    border-left: 3px solid var(--accent);
+    border-radius: 4px;
+    margin: 1.5rem 0;
+  }
+
+  .tags {
+    display: flex;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+  }
+  .tag {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.8rem;
+    color: var(--fg-muted);
+    background: var(--bg-elev);
+    padding: 0.15rem 0.5rem;
+    border-radius: 3px;
+    border: 1px solid var(--border);
+  }
+
+  .authors {
+    font-size: 0.9rem;
+    color: var(--fg-muted);
+  }
+
+  .post-body :global(h2) {
+    font-size: 1.5rem;
+    margin-top: 3rem;
+  }
+
+  .post-footer {
+    margin-top: 4rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--border);
+  }
+
+  .cta {
+    display: inline-block;
+    background: var(--accent);
+    color: var(--bg);
+    padding: 0.75rem 1.5rem;
+    border-radius: 4px;
+    font-weight: 600;
+    text-decoration: none;
+  }
+  .cta:hover {
+    text-decoration: none;
+    opacity: 0.9;
+  }
+
+  .report {
+    margin-top: 1.5rem;
+    font-size: 0.9rem;
+  }
+</style>
