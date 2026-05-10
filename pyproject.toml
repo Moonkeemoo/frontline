@@ -36,6 +36,9 @@ ignore = ["RUF001", "RUF002", "RUF003"]
 asyncio_mode = "auto"
 testpaths = ["tests"]
 
+[project.scripts]
+frontline = "pipeline.run:main"
+
 [tool.hatch.build.targets.wheel]
 packages = ["pipeline"]
 

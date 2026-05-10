@@ -1,0 +1,82 @@
+name: Daily Pipeline
+
+on:
+  schedule:
+    # 06:00 UTC = 08:00 EEST (літо) / 09:00 у зимовий час
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Dry-run mode (no commits, no Telegram post)"
+        type: boolean
+        default: false
+      limit:
+        description: "Max papers to process"
+        type: string
+        default: "10"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: daily-pipeline
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Sync deps
+        run: uv sync
+
+      - name: Run pipeline
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHANNEL_ID: ${{ secrets.TELEGRAM_CHANNEL_ID }}
+          FRONTLINE_DAILY_PAPER_LIMIT: ${{ inputs.limit || '10' }}
+          FRONTLINE_DAILY_COST_CAP_USD: "1.0"
+          FRONTLINE_DRY_RUN: ${{ inputs.dry_run && 'true' || 'false' }}
+        run: |
+          uv run python -m pipeline.run \
+            --output-dir site/content/posts \
+            --queue-dir .runs/queue \
+            --log-path pipeline/data/published.jsonl
+
+      - name: Commit & push new posts
+        if: ${{ !inputs.dry_run }}
+        run: |
+          git config user.name "frontline-bot"
+          git config user.email "bot@frontline.local"
+          git add site/content/posts/ pipeline/data/ .runs/queue/ 2>/dev/null || true
+          if git diff --cached --quiet; then
+            echo "::notice::No new content this run."
+          else
+            git commit -m "feat(content): daily run $(date -u +%Y-%m-%d)"
+            git push
+          fi
+
+      - name: Open issue on failure
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const today = new Date().toISOString().split('T')[0];
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `Pipeline failure ${today}`,
+              body: `Daily pipeline run failed. See: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+              labels: ['pipeline-failure', 'auto'],
+            });

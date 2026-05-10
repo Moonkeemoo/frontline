@@ -27,14 +27,29 @@ HF Papers / arXiv  →  generate (Sonnet)  →  critique (Opus)  →  publish/qu
 
 Деталі — `docs/ARCHITECTURE.md`.
 
-## Local dev (TBD)
+## Local dev
 
 ```bash
-# coming after pipeline modules land
-uv sync
-cp .env.example .env  # додати ANTHROPIC_API_KEY
-uv run python -m pipeline.run --dry-run
+uv sync                                    # install deps + create venv
+cp .env.example .env                       # додати ANTHROPIC_API_KEY (мін.)
+uv run python -m pipeline.run --dry-run    # прогнати без публікації
+uv run python -m pytest                    # запустити тести (47/47)
+uv run ruff check pipeline/ tests/         # лінт
 ```
+
+Для повного запуску з публікацією на сайт + Telegram потрібні також:
+- `TELEGRAM_BOT_TOKEN` (від @BotFather)
+- `TELEGRAM_CHANNEL_ID` (`@your_channel` або numeric `-100...`)
+
+## Deploy
+
+Pipeline запускається автоматично через GitHub Actions:
+- **Daily cron** `06:00 UTC` (`.github/workflows/daily.yml`) — fetches HF Papers, generates+critiques, commits new posts back to repo
+- **CI on PR** (`.github/workflows/ci.yml`) — lint + 47 тестів
+
+Required GitHub secrets: `ANTHROPIC_API_KEY`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHANNEL_ID`.
+
+При фейлі pipeline-у автоматично створюється issue з лінком на failed run.
 
 ## Принципи
 
