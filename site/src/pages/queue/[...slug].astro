@@ -2,7 +2,6 @@
 import { getCollection, render } from "astro:content";
 import Layout from "../../layouts/Layout.astro";
 import FileViewer from "../../components/FileViewer.astro";
-import CmdPreamble from "../../components/CmdPreamble.astro";
 import { sourceLabel } from "../../utils";
 
 export async function getStaticPaths() {
@@ -20,7 +19,6 @@ const issues = critique?.issues ?? [];
 ---
 
 <Layout title={`[черга] ${item.data.title} — Frontline`} description={item.data.tldr}>
-  <CmdPreamble cmd={`cat queue/${item.id}.md`} />
   <FileViewer
     label={`queue/${item.id}.md`}
     icon="file"

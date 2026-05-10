@@ -2,7 +2,6 @@
 import { getCollection, render } from "astro:content";
 import Layout from "../../layouts/Layout.astro";
 import FileViewer from "../../components/FileViewer.astro";
-import CmdPreamble from "../../components/CmdPreamble.astro";
 import VoteButton from "../../components/VoteButton.astro";
 import { sourceLabel } from "../../utils";
 
@@ -19,7 +18,6 @@ const { Content } = await render(post);
 ---
 
 <Layout title={`${post.data.title} — Frontline`} description={post.data.tldr}>
-  <CmdPreamble cmd={`cat posts/${post.id}.md`} />
   <FileViewer
     label={`posts/${post.id}.md`}
     icon="file"

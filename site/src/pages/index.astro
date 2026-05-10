@@ -2,7 +2,6 @@
 import { getCollection } from "astro:content";
 import Layout from "../layouts/Layout.astro";
 import FileViewer from "../components/FileViewer.astro";
-import CmdPreamble from "../components/CmdPreamble.astro";
 import VoteButton from "../components/VoteButton.astro";
 import { sourceLabel } from "../utils";
 
@@ -50,7 +49,6 @@ const groupedEntries = Array.from(grouped.entries()).sort(
 ---
 
 <Layout>
-  <CmdPreamble cmd="cat README.md" />
   <FileViewer
     label="README.md"
     icon="book"

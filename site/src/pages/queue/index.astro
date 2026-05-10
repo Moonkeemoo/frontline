@@ -2,7 +2,6 @@
 import { getCollection } from "astro:content";
 import Layout from "../../layouts/Layout.astro";
 import FileViewer from "../../components/FileViewer.astro";
-import CmdPreamble from "../../components/CmdPreamble.astro";
 import { sourceLabel } from "../../utils";
 
 const items = (await getCollection("queue")).sort(
@@ -13,7 +12,6 @@ const items = (await getCollection("queue")).sort(
 ---
 
 <Layout title="Черга на ревʼю — Frontline">
-  <CmdPreamble cmd="ls queue/" />
   <FileViewer
     label="queue/"
     icon="directory"

@@ -4,7 +4,6 @@ import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import Layout from "../layouts/Layout.astro";
 import FileViewer from "../components/FileViewer.astro";
-import CmdPreamble from "../components/CmdPreamble.astro";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const logPath = resolve(__dirname, "../../../pipeline/data/published.jsonl");
@@ -45,7 +44,6 @@ stats.costPerPaper =
 ---
 
 <Layout title="Алгоритм відбору — Frontline">
-  <CmdPreamble cmd="cat ALGORITHM.md" />
   <FileViewer
     label="ALGORITHM.md"
     icon="book"

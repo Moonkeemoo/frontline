@@ -1,11 +1,9 @@
 ---
 import Layout from "../layouts/Layout.astro";
 import FileViewer from "../components/FileViewer.astro";
-import CmdPreamble from "../components/CmdPreamble.astro";
 ---
 
 <Layout title="Про проєкт — Frontline">
-  <CmdPreamble cmd="cat ABOUT.md" />
   <FileViewer
     label="ABOUT.md"
     icon="book"
