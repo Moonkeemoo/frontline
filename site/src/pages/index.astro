@@ -9,6 +9,44 @@ const posts = (await getCollection("posts")).sort(
     new Date(b.data.publish_date).getTime() -
     new Date(a.data.publish_date).getTime(),
 );
+
+// Group posts by primary category (first tag is most representative;
+// LLM-generated tags are reasonably stable: llm, agents, security, etc.)
+const CATEGORY_LABELS: Record<string, string> = {
+  llm: "LLM & Language Models",
+  agents: "AI Agents",
+  rl: "Reinforcement Learning",
+  cv: "Computer Vision",
+  multimodal: "Multimodal",
+  rag: "RAG & Retrieval",
+  efficiency: "Efficiency / Inference",
+  training: "Training & Fine-tuning",
+  inference: "Inference / Deployment",
+  safety: "Safety & Alignment",
+  interpretability: "Interpretability",
+  security: "Security & Crypto",
+  systems: "Systems & Infra",
+  databases: "Databases",
+  software_engineering: "Software Engineering",
+  benchmark: "Benchmarks & Evaluation",
+};
+
+function categoryKey(post: typeof posts[number]): string {
+  return post.data.tags[0] || "general";
+}
+function categoryLabel(key: string): string {
+  return CATEGORY_LABELS[key] || `#${key}`;
+}
+
+const grouped = new Map<string, typeof posts>();
+for (const post of posts) {
+  const key = categoryKey(post);
+  if (!grouped.has(key)) grouped.set(key, []);
+  grouped.get(key)!.push(post);
+}
+const groupedEntries = Array.from(grouped.entries()).sort(
+  (a, b) => b[1].length - a[1].length,
+);
 ---
 
 <Layout>
@@ -33,33 +71,51 @@ const posts = (await getCollection("posts")).sort(
       українською мовою резюме і публікує сюди + у Telegram.
     </p>
 
-    <h2>Останні пости</h2>
+    <h2>Категорії</h2>
 
     {posts.length === 0 ? (
       <p><em>Поки що пусто — pipeline ще не запустився сьогодні.</em></p>
     ) : (
-      <ul class="post-list">
-        {posts.map((post) => (
-          <li>
-            <h3 class="post-title">
-              <a href={`/posts/${post.id}/`}>{post.data.title}</a>
+      <>
+        <p class="category-toc">
+          {groupedEntries.map(([key, items]) => (
+            <a href={`#cat-${key}`} class="category-chip">
+              {categoryLabel(key)} <span class="cnt">{items.length}</span>
+            </a>
+          ))}
+        </p>
+
+        {groupedEntries.map(([key, items]) => (
+          <>
+            <h3 id={`cat-${key}`} class="category-heading">
+              {categoryLabel(key)}{" "}
+              <span class="muted">({items.length})</span>
             </h3>
-            <p class="meta">
-              <span class="arxiv">{sourceLabel(post.data.source)}:{post.data.arxiv_id}</span>
-              <span class="dot">·</span>
-              <span>{post.data.read_min} хв</span>
-              <span class="dot">·</span>
-              <span>{post.data.publish_date}</span>
-            </p>
-            <p class="post-tldr">{post.data.tldr}</p>
-            <p class="tag-list">
-              {post.data.tags.map((tag) => (
-                <span class="tag">{tag}</span>
+            <ul class="post-list">
+              {items.map((post) => (
+                <li>
+                  <h4 class="post-title">
+                    <a href={`/posts/${post.id}/`}>{post.data.title}</a>
+                  </h4>
+                  <p class="meta">
+                    <span class="arxiv">{sourceLabel(post.data.source)}:{post.data.arxiv_id}</span>
+                    <span class="dot">·</span>
+                    <span>{post.data.read_min} хв</span>
+                    <span class="dot">·</span>
+                    <span>{post.data.publish_date}</span>
+                  </p>
+                  <p class="post-tldr">{post.data.tldr}</p>
+                  <p class="tag-list">
+                    {post.data.tags.map((tag) => (
+                      <span class="tag">{tag}</span>
+                    ))}
+                  </p>
+                </li>
               ))}
-            </p>
-          </li>
+            </ul>
+          </>
         ))}
-      </ul>
+      </>
     )}
 
     <h2>Про проєкт</h2>
@@ -96,4 +152,38 @@ const posts = (await getCollection("posts")).sort(
     margin: 8px 0 10px !important;
     color: var(--color-fg);
   }
+
+  .category-toc {
+    display: flex !important;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin: 16px 0 24px !important;
+  }
+  .category-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    background: var(--color-canvas-subtle);
+    border: 1px solid var(--color-border);
+    border-radius: 2em;
+    font-size: 13px;
+    color: var(--color-fg) !important;
+    text-decoration: none !important;
+  }
+  .category-chip:hover {
+    border-color: var(--color-link);
+    color: var(--color-link) !important;
+  }
+  .category-chip .cnt {
+    color: var(--color-fg-muted);
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Consolas, monospace;
+    font-size: 11px;
+  }
+  .category-heading {
+    border-top: 1px solid var(--color-border-muted);
+    padding-top: 16px !important;
+    margin-top: 32px !important;
+  }
+  .muted { color: var(--color-fg-muted); font-weight: 400; font-size: 0.85em; }
 </style>

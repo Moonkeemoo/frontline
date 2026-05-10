@@ -1,4 +1,4 @@
-# Frontline glossary v1
+# Frontline glossary v2
 #
 # Правило для prompt-ів:
 #   1. Якщо термін має `ua_term` — перекладати на UA.
@@ -6,33 +6,46 @@
 #   3. Якщо терміна тут немає — preferred default: залишати англійською в курсиві,
 #      якщо це технічний термін без усталеного UA-аналога.
 #
+# Поле `explanation` (опц.) — використовується сайтом для tooltip-ів при
+# наведенні на термін у статті. 1-2 речення українською, без зайвих деталей.
+#
 # Назви бібліотек, моделей, фреймворків (PyTorch, GPT-4, BERT, LangChain) — НЕ перекладаємо НІКОЛИ.
-# Це окреме правило в prompt-і, не в цьому файлі.
 
 terms:
   # === Усталене UA: перекладаємо ===
   - en: transformer
     ua_term: трансформер
+    explanation: "Архітектура нейромережі (2017), що стала основою всіх сучасних LLM (GPT, Claude, Gemini). Базується на attention-механізмі."
   - en: neural network
     ua_term: нейронна мережа
+    explanation: "Обчислювальна модель з шарів простих «нейронів», які навчаються через підлаштування ваг. Основа всього сучасного ML."
   - en: gradient descent
     ua_term: градієнтний спуск
+    explanation: "Базовий алгоритм навчання нейромереж — поступове коректування параметрів у напрямку зменшення помилки."
   - en: stochastic gradient descent
     ua_term: стохастичний градієнтний спуск
+    explanation: "Варіант gradient descent, де оновлення робляться на одному прикладі (або mini-batch) замість всього датасету. Швидше і часто стабільніше."
   - en: backpropagation
     ua_term: зворотне поширення помилки
+    explanation: "Алгоритм обчислення градієнтів у нейромережі через chain rule — основа того, як мережі взагалі вчаться."
   - en: loss function
     ua_term: функція втрат
+    explanation: "Числова метрика того, наскільки модель помиляється. Тренування = мінімізація loss за допомогою gradient descent."
   - en: overfitting
     ua_term: перенавчання
+    explanation: "Модель занадто добре запамʼятовує training data, але погано працює на нових прикладах. Лікується regularization-ом, dropout-ом, більше даних."
   - en: underfitting
     ua_term: недонавчання
+    explanation: "Модель занадто проста і не вловлює патернів навіть у training data. Лікується більшою моделлю або довшим тренуванням."
   - en: regularization
     ua_term: регуляризація
+    explanation: "Техніки, що змушують модель шукати простіші рішення (L1/L2, dropout, weight decay). Запобігає перенавчанню."
   - en: dataset
     ua_term: датасет
+    explanation: "Набір прикладів для тренування або оцінки моделі. Розмір і якість даних — часто головний фактор успіху."
   - en: training
     ua_term: тренування
+    explanation: "Процес, у якому модель підлаштовує параметри до даних, мінімізуючи функцію втрат."
   - en: model
     ua_term: модель
   - en: layer
@@ -44,93 +57,130 @@ terms:
     note: "у контексті ML параметра (а не упередженості)"
   - en: convolutional neural network
     ua_term: згорткова нейронна мережа
+    explanation: "Тип мережі для роботи із зображеннями. До 2017 — основа computer vision, зараз поступово витісняється vision transformer-ами."
   - en: recurrent neural network
     ua_term: рекурентна нейронна мережа
+    explanation: "Архітектура для послідовних даних (текст, аудіо). Витіснена transformer-ами через 2018-2020 в більшості задач."
   - en: language model
     ua_term: мовна модель
+    explanation: "Модель, що оцінює ймовірність послідовності слів. Сучасні LLM — це autoregressive language models, які генерують текст слово за словом."
   - en: large language model
     ua_term: велика мовна модель
+    explanation: "Мовна модель з мільярдами параметрів (GPT-4, Claude, Gemini). Здатна виконувати широкий спектр задач без явного fine-tuning-у."
   - en: reinforcement learning
     ua_term: навчання з підкріпленням
+    explanation: "Підхід, де агент вчиться через взаємодію з середовищем і нагороди за дії. Використовується для AlphaGo, ChatGPT (RLHF), робототехніки."
   - en: supervised learning
     ua_term: навчання з учителем
+    explanation: "Тренування на парах (вхід, правильна_відповідь). Найпоширеніший спосіб ML коли є розмічені дані."
   - en: unsupervised learning
     ua_term: навчання без учителя
+    explanation: "Знаходження структури в нерозмічених даних. Pre-training мовних моделей — приклад self-supervised варіанту."
   - en: hyperparameter
     ua_term: гіперпараметр
+    explanation: "Параметр, який задається до тренування (learning rate, batch size, кількість шарів) — на відміну від ваг, що навчаються."
 
   # === Залишаємо англійською (контестно або без усталеного UA) ===
   - en: embedding
     keep_english: true
+    explanation: "Векторне представлення (числовий масив), що кодує семантику обʼєкта — слова, картинки, користувача. Близькі за змістом обʼєкти мають близькі вектори."
     note: "«векторне представлення» громіздке; UA-практики кажуть embedding"
   - en: attention
     keep_english: true
+    explanation: "Механізм у нейромережі, що дозволяє моделі вирішувати, на які частини входу «звертати увагу» при обробці кожного елемента. Основа архітектури transformer."
     note: "у контексті attention mechanism; «увага» втрачає термінологічну точність"
   - en: self-attention
     keep_english: true
+    explanation: "Варіант attention, де токени послідовності звертають увагу один на одного. Дозволяє моделі ловити залежності між словами на будь-якій відстані."
   - en: cross-attention
     keep_english: true
+    explanation: "Attention між двома різними послідовностями — наприклад, encoder→decoder у translation-моделі."
   - en: fine-tuning
     keep_english: true
+    explanation: "Донавчання попередньо натренованої моделі на меншому specific-датасеті, щоб адаптувати її до конкретної задачі. Дешевше за тренування з нуля."
     alt_ua: донавчання
     note: "обидва вживаються; default — англійською"
   - en: pre-training
     keep_english: true
+    explanation: "Перший етап навчання моделі на великому загальному корпусі. Готує модель до подальшого fine-tuning-у на конкретні задачі."
   - en: prompt
     keep_english: true
+    explanation: "Текстовий вхід, який ти даєш мовній моделі, щоб отримати відповідь. Якість prompt сильно впливає на якість виходу."
     note: "«запит/підказка» втрачає сенс у LLM-контексті"
   - en: prompt engineering
     keep_english: true
+    explanation: "Мистецтво написання prompt-ів так, щоб модель давала кращі відповіді. Окрема дисципліна, що зʼявилась у 2022-2023."
   - en: tokenization
     keep_english: true
+    explanation: "Розбиття тексту на елементарні одиниці (token-и) для обробки моделлю. Може бути на рівні символів, слів, або subword-фрагментів."
   - en: token
     keep_english: true
+    explanation: "Базова одиниця тексту після tokenization — зазвичай subword-фрагмент. Claude і GPT-4 мають context window на ~200k token-ів."
   - en: inference
     keep_english: true
+    explanation: "Виконання вже натренованої моделі на нових даних — те, що відбувається коли ти задаєш питання ChatGPT і отримуєш відповідь."
     note: "інференс/інференція обидва вживаються; default — англійською"
   - en: pipeline
     keep_english: true
+    explanation: "Послідовність обробки даних, де результат одного етапу йде на вхід наступному. У ML — від збору даних до тренування і інференсу."
   - en: benchmark
     keep_english: true
+    explanation: "Стандартизований тест/набір задач для порівняння моделей. Наприклад, GSM8K (математика), MMLU (знання), HumanEval (код), SWE-bench (фікс багів)."
   - en: state-of-the-art
     keep_english: true
     short: SOTA
+    explanation: "Найкращий поточний результат на якомусь benchmark-у. SOTA швидко змінюється — через місяць може бути новий лідер."
   - en: zero-shot
     keep_english: true
+    explanation: "Виконання задачі моделлю без жодного прикладу в prompt-і. Просто питаєш модель і вона відповідає за рахунок попереднього навчання."
   - en: few-shot
     keep_english: true
+    explanation: "Виконання задачі з кількома прикладами в prompt-і (зазвичай 2-5). Модель «навчається на льоту» з контексту."
   - en: chain-of-thought
     keep_english: true
     short: CoT
+    explanation: "Техніка, де модель явно розписує проміжні кроки міркування перед фінальною відповіддю. Сильно покращує точність на reasoning-задачах."
   - en: retrieval-augmented generation
     keep_english: true
     short: RAG
+    explanation: "Підхід, де перед генерацією модель спочатку шукає релевантні документи у векторній базі, потім використовує їх як контекст. Дозволяє моделі відповідати про дані поза training set."
   - en: reinforcement learning from human feedback
     keep_english: true
     short: RLHF
+    explanation: "Процес fine-tuning-у мовної моделі на основі людських оцінок «краща/гірша відповідь». Перетворює базову модель на корисного асистента (так зробили GPT-4 і Claude)."
   - en: diffusion model
     keep_english: true
+    explanation: "Тип генеративної моделі, що поступово очищає шум до зображення/аудіо/відео. Основа Stable Diffusion, DALL-E 3, Sora."
   - en: hallucination
     keep_english: true
+    explanation: "Коли LLM вигадує неправдиву інформацію з виглядом впевненості — наприклад, цитує неіснуючу статтю. Один з головних відкритих risk-ів у LLM."
     note: "у LLM-контексті; «галюцинація» допустима але рідша"
   - en: agent
     keep_english: true
+    explanation: "AI-система, що може виконувати багатокрокові задачі за допомогою інструментів (виклик API, читання файлів, виконання коду). Claude Code — приклад coding-агента."
     note: "у контексті AI-агентів; на загал — «агент»"
   - en: tool use
     keep_english: true
+    explanation: "Здатність LLM викликати зовнішні функції/API під час відповіді — наприклад, запит до калькулятора, бази даних, або веб-пошуку."
   - en: context window
     keep_english: true
+    explanation: "Максимальна кількість token-ів, яку модель може обробити за один запит. Більший — дозволяє довші діалоги, документи, кодові бази (Claude має 200k, деякі моделі — 1M+)."
   - en: latency
     keep_english: true
+    explanation: "Затримка від запиту до відповіді. Критична для продуктів типу chat (треба <1s), менш — для batch-обробки."
     alt_ua: затримка
   - en: throughput
     keep_english: true
+    explanation: "Скільки запитів модель обробляє за одиницю часу. Trade-off з latency — батчинг збільшує throughput, але збільшує latency."
   - en: quantization
     keep_english: true
+    explanation: "Зменшення precision-у параметрів моделі (з 16-bit до 8-bit/4-bit) для зменшення памʼяті і прискорення інференсу — з невеликою втратою якості."
   - en: distillation
     keep_english: true
+    explanation: "Тренування меншої «student»-моделі імітувати поведінку більшої «teacher»-моделі. Дозволяє запустити дешевшу версію SOTA-моделі."
   - en: pruning
     keep_english: true
+    explanation: "Видалення менш важливих параметрів/нейронів з моделі для зменшення розміру і прискорення. Часто комбінують з fine-tuning-ом."
 
 # Phrases не для перекладу взагалі (бренди/проєкти/конференції)
 do_not_translate:

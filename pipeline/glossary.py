@@ -15,6 +15,7 @@ class GlossaryTerm(BaseModel):
     short: str | None = None
     alt_ua: str | None = None
     note: str | None = None
+    explanation: str | None = None  # 1-2 sentence UA explanation for tooltip
 
 
 class Glossary(BaseModel):

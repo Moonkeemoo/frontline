@@ -9,6 +9,10 @@ const {
 } = Astro.props;
 ---
 
+<script>
+  import "../lib/glossary-tooltips";
+</script>
+
 <!doctype html>
 <html lang="uk">
   <head>
@@ -340,6 +344,73 @@ const {
         color: var(--color-fg-muted);
         background: var(--color-canvas-subtle);
         border: 1px solid var(--color-border);
+      }
+
+      /* Glossary tooltips ====================================================
+       * Applied by glossary-tooltips.ts to <em> elements whose text matches a
+       * glossary term with an `explanation`. Hover desktop, tap mobile. */
+      .g-term {
+        position: relative;
+        border-bottom: 1px dotted var(--color-fg-muted);
+        cursor: help;
+        font-style: italic;
+      }
+      .g-term::after {
+        content: attr(data-tooltip);
+        position: absolute;
+        bottom: calc(100% + 8px);
+        left: 50%;
+        transform: translateX(-50%);
+        background: #1f2328;
+        color: #ffffff;
+        padding: 8px 12px;
+        border-radius: 6px;
+        white-space: normal;
+        width: max-content;
+        max-width: 320px;
+        font-size: 13px;
+        line-height: 1.45;
+        font-style: normal;
+        font-weight: 400;
+        z-index: 100;
+        pointer-events: none;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.15s, visibility 0.15s;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      }
+      .g-term::before {
+        content: "";
+        position: absolute;
+        bottom: calc(100% + 4px);
+        left: 50%;
+        transform: translateX(-50%);
+        border: 4px solid transparent;
+        border-top-color: #1f2328;
+        z-index: 100;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.15s, visibility 0.15s;
+      }
+      .g-term:hover::after,
+      .g-term:hover::before,
+      .g-term:focus::after,
+      .g-term:focus::before,
+      .g-term.g-active::after,
+      .g-term.g-active::before {
+        opacity: 1;
+        visibility: visible;
+      }
+      @media (max-width: 600px) {
+        .g-term::after {
+          left: 0;
+          transform: none;
+          max-width: calc(100vw - 80px);
+        }
+        .g-term::before {
+          left: 16px;
+          transform: none;
+        }
       }
     </style>
   </body>
