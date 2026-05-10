@@ -11,6 +11,7 @@ const baseSchema = z.object({
   authors: z.array(z.string()),
   source: z.enum([
     "huggingface_daily",
+    "hackernews",
     "arxiv_rss",
     "iacr_eprint",
     "openreview",

@@ -16,7 +16,11 @@ from .critique import critique_summary
 from .generate import DEFAULT_MODEL as DEFAULT_GENERATE_MODEL
 from .generate import generate_summary
 from .glossary import Glossary
-from .ingest import DEFAULT_ARXIV_CATEGORIES, fetch_all_sources
+from .ingest import (
+    DEFAULT_ARXIV_CATEGORIES,
+    fetch_all_sources,
+    select_with_quotas,
+)
 from .log import PublishedLog
 from .models import PipelineResult
 from .publish import post_to_telegram, render_telegram_message, write_post
@@ -44,22 +48,35 @@ async def run_pipeline(
     client = client or AsyncAnthropic()
     pub_log = PublishedLog(log_path)
 
-    papers = await fetch_all_sources(
-        hf_limit=daily_limit,
-        arxiv_limit_per_cat=3,
+    candidates = await fetch_all_sources(
+        hf_limit=10,
+        hn_limit=15,
+        arxiv_limit_per_cat=2,
         arxiv_categories=DEFAULT_ARXIV_CATEGORIES,
     )
     log.info(
-        "Fetched %d unique papers from HF Daily + arXiv (%d categories)",
-        len(papers), len(DEFAULT_ARXIV_CATEGORIES),
+        "Fetched %d unique candidates from %d sources",
+        len(candidates),
+        4 + len(DEFAULT_ARXIV_CATEGORIES),
     )
 
-    fresh = [p for p in papers if not pub_log.already_seen(p.arxiv_id)]
-    log.info("%d are new (not in log)", len(fresh))
+    fresh_candidates = [
+        p for p in candidates if not pub_log.already_seen(p.arxiv_id)
+    ]
+    log.info("%d are new (not in log)", len(fresh_candidates))
+
+    # Quota-based selection ensures non-AI sources reach LLM stage
+    fresh = select_with_quotas(fresh_candidates, limit=daily_limit)
+    by_source: dict[str, int] = {}
+    for p in fresh:
+        by_source[p.source] = by_source.get(p.source, 0) + 1
+    log.info("Selected %d for processing: %s", len(fresh), by_source)
 
     stats: dict[str, Any] = {
-        "fetched": len(papers),
+        "fetched": len(candidates),
+        "fresh_candidates": len(fresh_candidates),
         "fresh": len(fresh),
+        "by_source": by_source,
         "published": 0,
         "queued": 0,
         "rejected": 0,

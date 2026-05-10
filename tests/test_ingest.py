@@ -1,16 +1,22 @@
 """Tests for paper ingestion."""
 
+import re
+
 from pytest_httpx import HTTPXMock
 
 from pipeline.ingest import (
     ARXIV_RSS_BASE,
     HF_DAILY_URL,
+    HN_SEARCH_URL,
     IACR_RSS_URL,
     fetch_all_sources,
     fetch_arxiv_rss,
+    fetch_hackernews_papers,
     fetch_huggingface_daily,
     fetch_iacr_eprint,
+    select_with_quotas,
 )
+from pipeline.models import Paper
 
 HF_RESPONSE = [
     {
@@ -156,6 +162,7 @@ async def test_fetch_all_sources_includes_iacr(httpx_mock: HTTPXMock):
         arxiv_limit_per_cat=10,
         iacr_limit=10,
         include_iacr=True,
+        include_hn=False,
     )
 
     sources = {p.source for p in papers}
@@ -179,6 +186,7 @@ async def test_fetch_all_sources_can_skip_iacr(httpx_mock: HTTPXMock):
         hf_limit=10,
         arxiv_limit_per_cat=10,
         include_iacr=False,
+        include_hn=False,
     )
     assert all(p.source != "iacr_eprint" for p in papers)
 
@@ -214,6 +222,7 @@ async def test_fetch_all_sources_deduplicates_across_sources(httpx_mock: HTTPXMo
         hf_limit=10,
         arxiv_limit_per_cat=10,
         include_iacr=False,
+        include_hn=False,
     )
 
     ids = [p.arxiv_id for p in papers]
@@ -235,6 +244,7 @@ async def test_fetch_all_sources_tolerates_one_source_failure(httpx_mock: HTTPXM
         hf_limit=10,
         arxiv_limit_per_cat=5,
         include_iacr=False,
+        include_hn=False,
     )
     assert len(papers) == 2  # 2 from HF, 0 from broken arXiv
     assert all(p.source == "huggingface_daily" for p in papers)
@@ -248,3 +258,143 @@ async def test_arxiv_rss_strips_version_suffix(httpx_mock: HTTPXMock):
     papers = await fetch_arxiv_rss("cs.LG")
     # Second entry has v2 suffix — must be stripped
     assert any(p.arxiv_id == "2511.00001" for p in papers)
+
+
+# === Hacker News tests ====================================================
+
+HN_SEARCH_RESPONSE = {
+    "hits": [
+        {
+            "url": "https://arxiv.org/abs/2511.12345",
+            "title": "Cool paper 1",
+            "points": 200,
+            "created_at_i": 1700000000,
+        },
+        {
+            "url": "https://github.com/foo/bar",  # not arxiv — skipped
+            "title": "Some repo",
+            "points": 100,
+            "created_at_i": 1700001000,
+        },
+        {
+            "url": "https://arxiv.org/pdf/2511.99999",
+            "title": "Cool paper 2",
+            "points": 50,
+            "created_at_i": 1700002000,
+        },
+    ]
+}
+
+ARXIV_API_RESPONSE = """<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <entry>
+    <id>http://arxiv.org/abs/2511.12345v1</id>
+    <title>Cool paper 1 — official title</title>
+    <summary>This is the abstract of paper 1.</summary>
+    <author><name>Alice</name></author>
+    <author><name>Bob</name></author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2511.99999v1</id>
+    <title>Cool paper 2 — official title</title>
+    <summary>This is the abstract of paper 2.</summary>
+    <author><name>Carol</name></author>
+  </entry>
+</feed>"""
+
+
+async def test_hackernews_fetches_arxiv_papers(httpx_mock: HTTPXMock):
+    httpx_mock.add_response(
+        url=re.compile(rf"^{re.escape(HN_SEARCH_URL)}\?"),
+        json=HN_SEARCH_RESPONSE,
+    )
+    httpx_mock.add_response(
+        url=re.compile(r"^http://export\.arxiv\.org/api/query\?"),
+        content=ARXIV_API_RESPONSE.encode(),
+    )
+
+    papers = await fetch_hackernews_papers(min_points=10, limit=10)
+
+    assert len(papers) == 2
+    # Sorted by HN points desc — paper with 200 first
+    assert papers[0].arxiv_id == "2511.12345"
+    assert papers[0].source == "hackernews"
+    assert "Alice" in papers[0].authors
+    assert papers[1].arxiv_id == "2511.99999"
+
+
+async def test_hackernews_skips_non_arxiv_urls(httpx_mock: HTTPXMock):
+    response = {
+        "hits": [
+            {"url": "https://github.com/foo", "title": "x", "points": 100, "created_at_i": 1},
+            {"url": "https://example.com/blog", "title": "y", "points": 200, "created_at_i": 2},
+        ]
+    }
+    httpx_mock.add_response(
+        url=re.compile(rf"^{re.escape(HN_SEARCH_URL)}\?"), json=response
+    )
+    papers = await fetch_hackernews_papers()
+    assert papers == []
+
+
+# === select_with_quotas tests =============================================
+
+
+def _paper(arxiv_id: str, source: str) -> Paper:
+    return Paper(
+        arxiv_id=arxiv_id,
+        title=f"Title {arxiv_id}",
+        authors=["A"],
+        abstract="abs",
+        url=f"https://arxiv.org/abs/{arxiv_id}",
+        source=source,  # type: ignore
+    )
+
+
+def test_select_with_quotas_respects_per_source_caps():
+    papers = (
+        [_paper(f"hf.{i}", "huggingface_daily") for i in range(8)]
+        + [_paper(f"hn.{i}", "hackernews") for i in range(8)]
+        + [_paper(f"ic.{i}", "iacr_eprint") for i in range(3)]
+    )
+    selected = select_with_quotas(papers, limit=10)
+    by_source: dict[str, int] = {}
+    for p in selected:
+        by_source[p.source] = by_source.get(p.source, 0) + 1
+    # Defaults: HF=4, HN=4, IACR=1 = 9 selected. +1 from leftover (HF first
+    # in dict-iteration order) → HF=5, HN=4, IACR=1, total=10.
+    assert by_source["huggingface_daily"] == 5
+    assert by_source["hackernews"] == 4
+    assert by_source["iacr_eprint"] == 1
+    assert len(selected) == 10
+
+
+def test_select_with_quotas_falls_back_when_source_thin():
+    """If HN has only 1 paper, the spare 3 slots should fill from elsewhere."""
+    papers = (
+        [_paper(f"hf.{i}", "huggingface_daily") for i in range(10)]
+        + [_paper("hn.1", "hackernews")]
+        + [_paper("ic.1", "iacr_eprint")]
+    )
+    selected = select_with_quotas(papers, limit=10)
+    by_source: dict[str, int] = {}
+    for p in selected:
+        by_source[p.source] = by_source.get(p.source, 0) + 1
+    # HN had only 1, so HF gets 4 + 3 leftover overflow = 7 (or so)
+    assert by_source["hackernews"] == 1
+    assert by_source["iacr_eprint"] == 1
+    assert by_source["huggingface_daily"] == 8
+    assert len(selected) == 10
+
+
+def test_select_with_quotas_handles_unknown_source():
+    """Papers from sources not in quotas (e.g. arxiv_rss) go to overflow."""
+    papers = (
+        [_paper("hf.1", "huggingface_daily")]
+        + [_paper(f"ax.{i}", "arxiv_rss") for i in range(5)]
+    )
+    selected = select_with_quotas(papers, limit=10)
+    # HF: 1 (its quota allowed 4). Arxiv overflow fills rest.
+    assert any(p.source == "huggingface_daily" for p in selected)
+    arxiv_count = sum(1 for p in selected if p.source == "arxiv_rss")
+    assert arxiv_count == 5

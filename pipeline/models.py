@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field
 
 Source = Literal[
     "huggingface_daily",
+    "hackernews",
     "arxiv_rss",
     "iacr_eprint",
     "openreview",
@@ -36,6 +37,17 @@ class Paper(BaseModel):
             "openreview": "OpenReview",
         }.get(self.source, "arXiv")
         return f"{prefix}:{self.arxiv_id}"
+
+    @property
+    def signal_label(self) -> str:
+        """Where the paper came to our attention from."""
+        return {
+            "huggingface_daily": "HF curated",
+            "hackernews": "HN community",
+            "arxiv_rss": "arXiv recency",
+            "iacr_eprint": "IACR new",
+            "openreview": "OpenReview",
+        }.get(self.source, self.source)
 
 
 class SummaryUA(BaseModel):

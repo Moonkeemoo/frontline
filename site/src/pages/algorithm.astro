@@ -117,34 +117,47 @@ publish/    queue/    reject
 
     <table>
       <thead>
-        <tr><th>Джерело</th><th>URL</th><th>Ліміт</th><th>Сигнал</th></tr>
+        <tr><th>Джерело</th><th>URL</th><th>Ліміт</th><th>Сигнал якості</th></tr>
       </thead>
       <tbody>
         <tr>
           <td><strong>HuggingFace Daily</strong></td>
           <td><code>api/daily_papers</code></td>
           <td>10</td>
-          <td>ML-спільнота голосує (curated)</td>
+          <td>✅ ML-спільнота голосує (curated)</td>
+        </tr>
+        <tr>
+          <td><strong>Hacker News</strong></td>
+          <td><code>hn.algolia.com/api/v1/search</code></td>
+          <td>15 (з ≥30 points за 72 год)</td>
+          <td>✅ Tech-спільнота голосує (community-validated)</td>
         </tr>
         <tr>
           <td><strong>arXiv RSS</strong></td>
           <td><code>rss/&lt;cat&gt;</code></td>
           <td>2 × 28 = 56</td>
-          <td>Свіжі за recency, без curation</td>
+          <td>⚠ Лише recency, без curation (overflow)</td>
         </tr>
         <tr>
           <td><strong>IACR ePrint</strong></td>
           <td><code>rss/rss.xml</code></td>
           <td>5</td>
-          <td>Криптографія, daily</td>
+          <td>⚠ Recency, об'єм малий</td>
         </tr>
         <tr>
-          <td colspan="2"><strong>Всього</strong></td>
-          <td><strong>~71</strong></td>
+          <td colspan="2"><strong>Всього кандидатів</strong></td>
+          <td><strong>~85</strong></td>
           <td></td>
         </tr>
       </tbody>
     </table>
+
+    <p>
+      <strong>HN — ключовий антидот AI-bubble.</strong> HuggingFace курує
+      переважно AI/ML; Hacker News тягне systems / security / databases /
+      programming languages, які отримують реальний community-engagement.
+      Resolves arXiv метадата для кожного HN-лінку через arXiv API.
+    </p>
 
     <p>
       Реалізація: <a
@@ -189,24 +202,60 @@ publish/    queue/    reject
       <code>PublishedLog.already_seen()</code>.
     </p>
 
-    <h2>Етап 4 — Cap</h2>
+    <h2>Етап 4 — Quota-based selection</h2>
 
-    <ul>
-      <li><strong>Default:</strong> <code>FRONTLINE_DAILY_PAPER_LIMIT=10</code></li>
-      <li>
-        <strong>Cost cap:</strong> якщо <code>FRONTLINE_DAILY_COST_CAP_USD</code>
-        вичерпаний на половині — pipeline зупиняється і логує
-      </li>
-      <li>Беремо перші N після dedup + filter</li>
-    </ul>
+    <p>
+      Замість «перші 10 по порядку» (де HF з'їдала всі слоти) використовуємо
+      <strong>per-source quotas</strong>:
+    </p>
 
-    <div class="alert alert-attention">
-      <strong>⚠ Обмеження поточної логіки</strong>
-      Якщо HF Daily має 10+ якісних пейперів — всі N=10 слотів йдуть туди,
-      arXiv-overflow не доходить до LLM. У реальних запусках pipeline
-      обробляв переважно HF-папери. Plan V2: інтерлівати джерела для
-      topic diversity або вводити окремі квоти.
-    </div>
+    <table>
+      <thead>
+        <tr><th>Source</th><th>Quota</th><th>Що дає</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>huggingface_daily</code></td>
+          <td>4</td>
+          <td>Найкращий AI/ML curated сигнал</td>
+        </tr>
+        <tr>
+          <td><code>hackernews</code></td>
+          <td>4</td>
+          <td>Broad CS, community-validated, не лише AI</td>
+        </tr>
+        <tr>
+          <td><code>iacr_eprint</code></td>
+          <td>1</td>
+          <td>Свіжа криптографія</td>
+        </tr>
+        <tr>
+          <td>Overflow (з arXiv RSS + leftovers)</td>
+          <td>1</td>
+          <td>Заповнює залишок коли quota не вичерпана</td>
+        </tr>
+        <tr>
+          <td><strong>Total</strong></td>
+          <td><strong>10</strong></td>
+          <td><code>FRONTLINE_DAILY_PAPER_LIMIT</code></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p>
+      Якщо джерело має менше пейперів за quota — slack автоматично йде до
+      інших (приклад: HN має лише 1 → HF отримує +3 додаткових).
+    </p>
+
+    <p>
+      <strong>Cost cap:</strong> якщо <code>FRONTLINE_DAILY_COST_CAP_USD</code>
+      вичерпаний на половині — pipeline зупиняється і логує. Реалізація:{" "}
+      <a
+        href="https://github.com/Moonkeemoo/frontline/blob/main/pipeline/ingest.py"
+        target="_blank"
+        rel="noopener"><code>select_with_quotas()</code></a> у{" "}
+      <code>pipeline/ingest.py</code>.
+    </p>
 
     <h2>Етап 5 — Generate (Sonnet)</h2>
 
