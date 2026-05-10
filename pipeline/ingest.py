@@ -1,5 +1,7 @@
 """Ingest papers from HuggingFace Papers daily and arXiv RSS feeds."""
 
+import asyncio
+import logging
 import re
 from datetime import UTC, datetime
 
@@ -10,6 +12,18 @@ from .models import Paper
 
 HF_DAILY_URL = "https://huggingface.co/api/daily_papers"
 ARXIV_RSS_BASE = "http://export.arxiv.org/rss"
+
+# Default arXiv categories to monitor — broader than just AI/ML.
+# cs.LG  — machine learning             cs.SE  — software engineering
+# cs.AI  — artificial intelligence      cs.DB  — databases
+# cs.CL  — computation & language       cs.CR  — cryptography & security
+# cs.CV  — computer vision              cs.DC  — distributed/parallel computing
+DEFAULT_ARXIV_CATEGORIES = (
+    "cs.LG", "cs.AI", "cs.CL", "cs.CV",
+    "cs.SE", "cs.DB", "cs.CR", "cs.DC",
+)
+
+log = logging.getLogger(__name__)
 
 
 async def fetch_huggingface_daily(
@@ -105,6 +119,48 @@ async def fetch_arxiv_rss(
         except Exception:
             continue
     return papers
+
+
+async def fetch_all_sources(
+    *,
+    client: httpx.AsyncClient | None = None,
+    arxiv_categories: tuple[str, ...] = DEFAULT_ARXIV_CATEGORIES,
+    hf_limit: int = 10,
+    arxiv_limit_per_cat: int = 5,
+) -> list[Paper]:
+    """Aggregate papers from HuggingFace Daily + multiple arXiv categories.
+
+    Returns deduplicated list (by arxiv_id) preserving HF-first ordering
+    (HF Papers are human-curated, higher signal). Source failures are
+    logged but don't crash — partial results are still returned.
+    """
+    owns_client = client is None
+    client = client or httpx.AsyncClient(timeout=30)
+    try:
+        tasks: list = [fetch_huggingface_daily(client=client, limit=hf_limit)]
+        for cat in arxiv_categories:
+            tasks.append(
+                fetch_arxiv_rss(cat, client=client, limit=arxiv_limit_per_cat)
+            )
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+
+        all_papers: list[Paper] = []
+        seen: set[str] = set()
+        for source_label, result in zip(
+            ("huggingface_daily", *arxiv_categories), results, strict=False
+        ):
+            if isinstance(result, BaseException):
+                log.warning("Source %s failed: %s", source_label, result)
+                continue
+            for paper in result:
+                if paper.arxiv_id in seen:
+                    continue
+                seen.add(paper.arxiv_id)
+                all_papers.append(paper)
+        return all_papers
+    finally:
+        if owns_client:
+            await client.aclose()
 
 
 def _parse_iso(value: str | None) -> datetime | None:

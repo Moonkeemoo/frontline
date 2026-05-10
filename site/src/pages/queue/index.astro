@@ -1,6 +1,7 @@
 ---
 import { getCollection } from "astro:content";
 import Layout from "../../layouts/Layout.astro";
+import FileViewer from "../../components/FileViewer.astro";
 
 const items = (await getCollection("queue")).sort(
   (a, b) =>
@@ -10,80 +11,98 @@ const items = (await getCollection("queue")).sort(
 ---
 
 <Layout title="Черга на ревʼю — Frontline">
-  <h1>Черга на ревʼю</h1>
-
-  <p>
-    Резюме що НЕ пройшли auto-publish gate. Критик-LLM (Claude Opus) знайшов
-    проблеми, які треба переглянути людиною. Можливі дії:
+  <p class="breadcrumb">
+    <a href="/">/</a>
+    <span class="sep">/</span>
+    <span class="current">queue/</span>
   </p>
 
-  <ol>
-    <li>
-      <strong>Опублікувати як є.</strong> Якщо вважаєте, що зауваження
-      несуттєві: <code>git mv site/src/content/queue/&lt;file&gt;.md
-      site/src/content/posts/</code>, потім <code>git push</code>. Pipeline
-      залишить пост на сайті при наступному build.
-    </li>
-    <li>
-      <strong>Виправити і опублікувати.</strong> Відредагуйте
-      <code>site/src/content/queue/&lt;file&gt;.md</code> вручну, потім
-      <code>git mv</code> у <code>posts/</code>.
-    </li>
-    <li>
-      <strong>Видалити.</strong> Якщо не варте публікації:
-      <code>git rm site/src/content/queue/&lt;file&gt;.md</code>.
-    </li>
-  </ol>
+  <FileViewer label="queue/" icon="directory">
+    <h1>Черга на ревʼю</h1>
 
-  <h2>У черзі ({items.length})</h2>
+    <p>
+      Резюме що НЕ пройшли auto-publish gate. Критик-LLM (Claude Opus) знайшов
+      проблеми, які треба переглянути людиною. Можливі дії:
+    </p>
 
-  {items.length === 0 ? (
-    <p><em>Черга порожня — критик пропустив усе сьогодні.</em></p>
-  ) : (
-    <ul class="queue-list">
-      {items.map((item) => {
-        const issues = item.data.critique?.issues ?? [];
-        const high = issues.filter((i) => i.severity === "high").length;
-        const med = issues.filter((i) => i.severity === "medium").length;
-        const low = issues.filter((i) => i.severity === "low").length;
-        return (
-          <li>
-            <h3>
-              <a href={`/queue/${item.id}/`}>{item.data.title}</a>
-            </h3>
-            <p class="meta">
-              <span class="arxiv">arXiv:{item.data.arxiv_id}</span>
-              <span class="dot">·</span>
-              <span>{item.data.publish_date}</span>
-              <span class="dot">·</span>
-              <span>verdict: <code>{item.data.critique?.verdict ?? "—"}</code></span>
-            </p>
-            <p>{item.data.tldr}</p>
-            <p class="severity-summary">
-              {high > 0 && (
-                <span class="severity-pill severity-high">{high} high</span>
-              )}
-              {med > 0 && (
-                <span class="severity-pill severity-medium">{med} medium</span>
-              )}
-              {low > 0 && (
-                <span class="severity-pill severity-low">{low} low</span>
-              )}
-              {issues.length === 0 && (
-                <span class="muted">критика не збережена</span>
-              )}
-            </p>
-          </li>
-        );
-      })}
-    </ul>
-  )}
+    <ol>
+      <li>
+        <strong>Опублікувати як є</strong> (зауваження несуттєві):{" "}
+        <code
+          >git mv site/src/content/queue/&lt;file&gt;.md
+          site/src/content/posts/</code>, потім <code>git push</code>.
+      </li>
+      <li>
+        <strong>Виправити і опублікувати:</strong> відредагуйте файл вручну,
+        потім <code>git mv</code> у <code>posts/</code>.
+      </li>
+      <li>
+        <strong>Видалити:</strong>{" "}
+        <code>git rm site/src/content/queue/&lt;file&gt;.md</code>.
+      </li>
+    </ol>
+
+    <h2>У черзі ({items.length})</h2>
+
+    {items.length === 0 ? (
+      <p><em>Черга порожня — критик пропустив усе сьогодні.</em></p>
+    ) : (
+      <ul class="queue-list">
+        {items.map((item) => {
+          const issues = item.data.critique?.issues ?? [];
+          const high = issues.filter((i) => i.severity === "high").length;
+          const med = issues.filter((i) => i.severity === "medium").length;
+          const low = issues.filter((i) => i.severity === "low").length;
+          return (
+            <li>
+              <h3>
+                <a href={`/queue/${item.id}/`}>{item.data.title}</a>
+              </h3>
+              <p class="meta">
+                <span class="arxiv">arXiv:{item.data.arxiv_id}</span>
+                <span class="dot">·</span>
+                <span>{item.data.publish_date}</span>
+                <span class="dot">·</span>
+                <span>verdict: <code>{item.data.critique?.verdict ?? "—"}</code></span>
+              </p>
+              <p>{item.data.tldr}</p>
+              <p class="severity-summary">
+                {high > 0 && (
+                  <span class="severity-pill severity-high">{high} high</span>
+                )}
+                {med > 0 && (
+                  <span class="severity-pill severity-medium">{med} medium</span>
+                )}
+                {low > 0 && (
+                  <span class="severity-pill severity-low">{low} low</span>
+                )}
+                {issues.length === 0 && (
+                  <span class="muted">критика не збережена</span>
+                )}
+              </p>
+            </li>
+          );
+        })}
+      </ul>
+    )}
+  </FileViewer>
 </Layout>
 
 <style>
+  .breadcrumb {
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Consolas, monospace;
+    font-size: 14px;
+    color: var(--color-fg-muted);
+    margin: 0 0 12px;
+  }
+  .breadcrumb a { color: var(--color-link); text-decoration: none; }
+  .breadcrumb a:hover { text-decoration: underline; }
+  .breadcrumb .sep { margin: 0 6px; opacity: 0.5; }
+  .breadcrumb .current { color: var(--color-fg); }
+
   .queue-list {
     list-style: none;
-    padding-left: 0;
+    padding-left: 0 !important;
   }
   .queue-list > li {
     border-top: 1px solid var(--color-border-muted);
@@ -98,7 +117,7 @@ const items = (await getCollection("queue")).sort(
     border: none !important;
   }
   .queue-list h3 a { color: var(--color-fg); text-decoration: none; }
-  .queue-list h3 a:hover { color: var(--color-accent); }
+  .queue-list h3 a:hover { color: var(--color-link); text-decoration: underline; }
   .severity-summary {
     display: flex;
     gap: 6px;

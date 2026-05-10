@@ -1,79 +1,110 @@
 ---
 import Layout from "../layouts/Layout.astro";
+import FileViewer from "../components/FileViewer.astro";
 ---
 
 <Layout title="Про проєкт — Frontline">
-  <h1>Про Frontline</h1>
-
-  <p>
-    Свіжі AI/ML дослідження українською — TL;DR, прикладний контекст для
-    українського IT-сектора, лінк на першоджерело.
+  <p class="breadcrumb">
+    <a href="/">/</a>
+    <span class="sep">/</span>
+    <span class="current">ABOUT.md</span>
   </p>
 
-  <h2>Як це працює</h2>
+  <FileViewer label="ABOUT.md" icon="book">
+    <h1>Про Frontline</h1>
 
-  <p>
-    Щоранку pipeline бере топ-добірку з <a
-      href="https://huggingface.co/papers"
-      target="_blank"
-      rel="noopener">HuggingFace Papers</a> і <a
-      href="https://arxiv.org"
-      target="_blank"
-      rel="noopener">arXiv</a>. Для кожного пейпера мовна модель
-    (Claude Sonnet) генерує українське резюме, а друга модель (Claude Opus)
-    перевіряє переклад на термінологічні ляпи та галюцинації. Лише чисті
-    резюме автоматично публікуються тут і в Telegram-каналі.
-  </p>
+    <blockquote>
+      Свіжі AI/ML дослідження українською — TL;DR, прикладний контекст для
+      українського IT-сектора, лінк на першоджерело.
+    </blockquote>
 
-  <h2>Pipeline у трьох кроках</h2>
+    <h2>Як це працює</h2>
 
-  <ol>
-    <li><strong>Generate</strong> (Claude Sonnet) — readingsthe abstract,
-      повертає структурований JSON: <code>title_ua</code>, <code>tldr_ua</code>,
-      <code>what_they_did_ua</code>, <code>why_matters_ua</code>,
-      <code>limitations_ua</code>, <code>tags</code>.</li>
-    <li><strong>Critique</strong> (Claude Opus, інша модель) — перевіряє переклад
-      на 6 категорій помилок: hallucination, glossary violation, generic
-      "why_matters", hype tone, граматика, format. Повертає verdict
-      (<code>ok</code> / <code>needs_review</code> / <code>reject</code>).</li>
-    <li><strong>Publish</strong> — якщо <code>ok</code>, пост летить на сайт +
-      у Telegram. Якщо <code>needs_review</code> — у <a href="/queue/">чергу</a>.
-      Якщо <code>reject</code> — викидаємо.</li>
-  </ol>
+    <p>
+      Щоранку pipeline бере свіжі пейпери з <a
+        href="https://huggingface.co/papers"
+        target="_blank"
+        rel="noopener">HuggingFace Papers</a> і <a
+        href="https://arxiv.org"
+        target="_blank"
+        rel="noopener">arXiv</a> (8 категорій: <code>cs.LG</code>,
+      <code>cs.AI</code>, <code>cs.CL</code>, <code>cs.CV</code>,
+      <code>cs.SE</code>, <code>cs.DB</code>, <code>cs.CR</code>,
+      <code>cs.DC</code>). Для кожного пейпера мовна модель (Claude Sonnet)
+      генерує українське резюме, а друга модель (Claude Opus) перевіряє переклад
+      на термінологічні ляпи та галюцинації. Лише чисті резюме автоматично
+      публікуються тут і в Telegram-каналі.
+    </p>
 
-  <h2>Що ми НЕ робимо</h2>
-  <ul>
-    <li>Не перекладаємо самі пейпери — лише резюме з лінком на оригінал.</li>
-    <li>Не вигадуємо цифри та результати — все береться з абстракту.</li>
-    <li>Не кажемо «революція» і «прорив» — лише факти.</li>
-    <li>Не перекладаємо англомовні терміни без усталеного UA-аналога.</li>
-  </ul>
+    <h2>Pipeline у трьох кроках</h2>
 
-  <h2>Voice — «Фронтлайн знань»</h2>
+    <ol>
+      <li>
+        <strong>Generate</strong> (Claude Sonnet) — читає abstract, повертає
+        структурований JSON: <code>title_ua</code>, <code>tldr_ua</code>,
+        <code>what_they_did_ua</code>, <code>why_matters_ua</code>,
+        <code>limitations_ua</code>, <code>tags</code>.
+      </li>
+      <li>
+        <strong>Critique</strong> (Claude Opus, інша модель) — перевіряє переклад
+        на 6 категорій помилок: hallucination, glossary violation, generic
+        why_matters, hype tone, граматика, format. Повертає verdict
+        (<code>ok</code> / <code>needs_review</code> / <code>reject</code>).
+      </li>
+      <li>
+        <strong>Publish</strong> — якщо <code>ok</code>, пост летить на сайт + у
+        Telegram. Якщо <code>needs_review</code> — у <a href="/queue/">чергу</a>.
+        Якщо <code>reject</code> — викидаємо.
+      </li>
+    </ol>
 
-  <p>
-    Технічно точно, без хайпу. Якщо термін має усталений український переклад
-    (трансформер, нейронна мережа, перенавчання) — використовуємо його. Якщо ні
-    (<em>embedding</em>, <em>attention</em>, <em>fine-tuning</em>) — лишаємо
-    англійською в <em>курсиві</em>. Це джерело істини — <a
-      href="https://github.com/Moonkeemoo/frontline/blob/main/pipeline/glossary.yaml"
-      target="_blank"
-      rel="noopener">glossary.yaml</a> у відкритому репозиторії.
-  </p>
+    <h2>Що ми НЕ робимо</h2>
+    <ul>
+      <li>Не перекладаємо самі пейпери — лише резюме з лінком на оригінал.</li>
+      <li>Не вигадуємо цифри та результати — все береться з абстракту.</li>
+      <li>Не кажемо «революція» і «прорив» — лише факти.</li>
+      <li>Не перекладаємо англомовні терміни без усталеного UA-аналога.</li>
+    </ul>
 
-  <h2>Допоможи</h2>
-  <p>
-    Знайшов помилку перекладу або хибне твердження? Натисни «Повідомити нам»
-    під будь-яким постом, або створи <a
-      href="https://github.com/Moonkeemoo/frontline/issues/new"
-      target="_blank"
-      rel="noopener">issue на GitHub</a>.
-  </p>
+    <h2>Voice — «Фронтлайн знань»</h2>
 
-  <h2>Ціль</h2>
-  <p>
-    Зробити так, щоб українські IT-інженери, студенти та засновники мали одне
-    місце, де можна швидко зорієнтуватись у потоці AI/ML досліджень
-    українською — і знаходити ідеї, на яких можна побудувати наступне рішення.
-  </p>
+    <p>
+      Технічно точно, без хайпу. Якщо термін має усталений український переклад
+      (трансформер, нейронна мережа, перенавчання) — використовуємо його. Якщо
+      ні (<em>embedding</em>, <em>attention</em>, <em>fine-tuning</em>) —
+      лишаємо англійською в <em>курсиві</em>. Це джерело істини — <a
+        href="https://github.com/Moonkeemoo/frontline/blob/main/pipeline/glossary.yaml"
+        target="_blank"
+        rel="noopener">glossary.yaml</a> у відкритому репозиторії.
+    </p>
+
+    <h2>Допоможи</h2>
+    <p>
+      Знайшов помилку перекладу або хибне твердження? Натисни «Повідомити нам»
+      під будь-яким постом, або створи <a
+        href="https://github.com/Moonkeemoo/frontline/issues/new"
+        target="_blank"
+        rel="noopener">issue на GitHub</a>.
+    </p>
+
+    <h2>Ціль</h2>
+    <p>
+      Зробити так, щоб українські IT-інженери, студенти та засновники мали одне
+      місце, де можна швидко зорієнтуватись у потоці CS-досліджень українською —
+      і знаходити ідеї, на яких можна побудувати наступне рішення.
+    </p>
+  </FileViewer>
 </Layout>
+
+<style>
+  .breadcrumb {
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Consolas, monospace;
+    font-size: 14px;
+    color: var(--color-fg-muted);
+    margin: 0 0 12px;
+  }
+  .breadcrumb a { color: var(--color-link); text-decoration: none; }
+  .breadcrumb a:hover { text-decoration: underline; }
+  .breadcrumb .sep { margin: 0 6px; opacity: 0.5; }
+  .breadcrumb .current { color: var(--color-fg); }
+</style>

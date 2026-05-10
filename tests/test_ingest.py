@@ -5,6 +5,7 @@ from pytest_httpx import HTTPXMock
 from pipeline.ingest import (
     ARXIV_RSS_BASE,
     HF_DAILY_URL,
+    fetch_all_sources,
     fetch_arxiv_rss,
     fetch_huggingface_daily,
 )
@@ -98,6 +99,57 @@ async def test_arxiv_rss_parses_entries(httpx_mock: HTTPXMock):
     assert "<p>" not in first.abstract  # HTML stripped
     assert "abstract body" in first.abstract
     assert "A. Author" in first.authors
+
+
+async def test_fetch_all_sources_deduplicates_across_sources(httpx_mock: HTTPXMock):
+    """If the same arxiv_id appears in HF and arXiv RSS, dedup keeps HF version."""
+    # HF returns 2511.54321 (also in arXiv RSS below) + 2511.99999 (HF only)
+    hf_with_overlap = [
+        {
+            "paper": {
+                "id": "2511.54321",
+                "title": "From HF",
+                "authors": [{"name": "Same Paper"}],
+                "summary": "HF version",
+            }
+        },
+        {
+            "paper": {
+                "id": "2511.99999",
+                "title": "HF Only",
+                "authors": [{"name": "Bob"}],
+                "summary": "Only in HF",
+            }
+        },
+    ]
+    httpx_mock.add_response(url=HF_DAILY_URL, json=hf_with_overlap)
+    httpx_mock.add_response(
+        url=f"{ARXIV_RSS_BASE}/cs.LG", content=ARXIV_RSS_XML.encode()
+    )
+
+    papers = await fetch_all_sources(
+        arxiv_categories=("cs.LG",), hf_limit=10, arxiv_limit_per_cat=10
+    )
+
+    ids = [p.arxiv_id for p in papers]
+    # 2511.54321 is in both sources but should appear once, from HF (first source)
+    assert ids.count("2511.54321") == 1
+    assert ids[0] == "2511.54321"  # HF first
+    assert papers[0].source == "huggingface_daily"
+    # arXiv-only paper from RSS feed should be present
+    assert "2511.00001" in ids
+
+
+async def test_fetch_all_sources_tolerates_one_source_failure(httpx_mock: HTTPXMock):
+    """If arXiv RSS fails, HF papers still come through."""
+    httpx_mock.add_response(url=HF_DAILY_URL, json=HF_RESPONSE)
+    httpx_mock.add_response(url=f"{ARXIV_RSS_BASE}/cs.LG", status_code=500)
+
+    papers = await fetch_all_sources(
+        arxiv_categories=("cs.LG",), hf_limit=10, arxiv_limit_per_cat=5
+    )
+    assert len(papers) == 2  # 2 from HF, 0 from broken arXiv
+    assert all(p.source == "huggingface_daily" for p in papers)
 
 
 async def test_arxiv_rss_strips_version_suffix(httpx_mock: HTTPXMock):

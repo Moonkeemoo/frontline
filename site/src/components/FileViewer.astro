@@ -1,0 +1,102 @@
+---
+interface Props {
+  label: string;
+  icon?: "book" | "file" | "directory";
+}
+const { label, icon = "file" } = Astro.props;
+---
+
+<section class="file-viewer">
+  <header class="fv-header">
+    <div class="fv-tab">
+      {icon === "book" && (
+        <svg class="fv-icon" viewBox="0 0 16 16" width="16" height="16" fill="currentColor" aria-hidden="true">
+          <path d="M0 1.75A.75.75 0 0 1 .75 1h4.253c1.227 0 2.317.59 3 1.501A3.743 3.743 0 0 1 11.006 1h4.245a.75.75 0 0 1 .75.75v10.5a.75.75 0 0 1-.75.75h-4.507a2.25 2.25 0 0 0-1.591.659l-.622.621a.75.75 0 0 1-1.06 0l-.622-.621A2.25 2.25 0 0 0 5.258 13H.75a.75.75 0 0 1-.75-.75Zm7.251 10.324.004-5.073-.002-2.253A2.25 2.25 0 0 0 5.003 2.5H1.5v9h3.757a3.75 3.75 0 0 1 1.994.574ZM8.755 4.75l-.004 7.322a3.752 3.752 0 0 1 1.992-.572H14.5v-9h-3.495a2.25 2.25 0 0 0-2.25 2.25Z"/>
+        </svg>
+      )}
+      {icon === "file" && (
+        <svg class="fv-icon" viewBox="0 0 16 16" width="16" height="16" fill="currentColor" aria-hidden="true">
+          <path d="M2 1.75C2 .784 2.784 0 3.75 0h6.586c.464 0 .909.184 1.237.513l2.914 2.914c.329.328.513.773.513 1.237v9.586A1.75 1.75 0 0 1 13.25 16h-9.5A1.75 1.75 0 0 1 2 14.25Zm1.75-.25a.25.25 0 0 0-.25.25v12.5c0 .138.112.25.25.25h9.5a.25.25 0 0 0 .25-.25V6h-2.75A1.75 1.75 0 0 1 9 4.25V1.5Zm6.75.062V4.25c0 .138.112.25.25.25h2.688l-.011-.013-2.914-2.914-.013-.011Z"/>
+        </svg>
+      )}
+      {icon === "directory" && (
+        <svg class="fv-icon" viewBox="0 0 16 16" width="16" height="16" fill="currentColor" aria-hidden="true">
+          <path d="M1.75 1A1.75 1.75 0 0 0 0 2.75v10.5C0 14.216.784 15 1.75 15h12.5A1.75 1.75 0 0 0 16 13.25v-8.5A1.75 1.75 0 0 0 14.25 3H7.5a.25.25 0 0 1-.2-.1l-.9-1.2C6.07 1.26 5.55 1 5 1H1.75Z"/>
+        </svg>
+      )}
+      <span>{label}</span>
+    </div>
+    <div class="fv-actions">
+      <a
+        href={`https://github.com/Moonkeemoo/frontline`}
+        target="_blank"
+        rel="noopener"
+        aria-label="Edit on GitHub"
+        class="fv-action"
+      >
+        <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor" aria-hidden="true">
+          <path d="M11.013 1.427a1.75 1.75 0 0 1 2.474 0l1.086 1.086a1.75 1.75 0 0 1 0 2.474l-8.61 8.61c-.21.21-.47.364-.756.445l-3.251.93a.75.75 0 0 1-.927-.928l.929-3.25c.081-.286.235-.547.445-.758l8.61-8.61Zm.176 4.823L9.75 4.81l-6.286 6.287a.253.253 0 0 0-.064.108l-.558 1.953 1.953-.558a.253.253 0 0 0 .108-.064Zm1.238-3.763a.25.25 0 0 0-.354 0L10.811 3.75l1.439 1.44 1.263-1.263a.25.25 0 0 0 0-.354Z"/>
+        </svg>
+      </a>
+    </div>
+  </header>
+  <div class="fv-body markdown-body">
+    <slot />
+  </div>
+</section>
+
+<style>
+  .file-viewer {
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    overflow: hidden;
+    background: var(--color-canvas);
+  }
+  .fv-header {
+    background: var(--color-canvas-subtle);
+    border-bottom: 1px solid var(--color-border);
+    padding: 0 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: stretch;
+    min-height: 40px;
+  }
+  .fv-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--color-fg);
+    padding: 8px 0;
+    border-bottom: 2px solid var(--color-accent);
+    margin-bottom: -1px;
+  }
+  .fv-icon {
+    color: var(--color-fg-muted);
+    flex-shrink: 0;
+  }
+  .fv-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .fv-action {
+    color: var(--color-fg-muted);
+    padding: 6px;
+    display: inline-flex;
+    align-items: center;
+    border-radius: 4px;
+    text-decoration: none;
+  }
+  .fv-action:hover {
+    color: var(--color-accent);
+    background: var(--color-canvas);
+  }
+  .fv-body {
+    padding: 32px;
+  }
+  @media (max-width: 600px) {
+    .fv-body { padding: 20px; }
+  }
+</style>

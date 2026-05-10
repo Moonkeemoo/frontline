@@ -16,7 +16,7 @@ from .critique import critique_summary
 from .generate import DEFAULT_MODEL as DEFAULT_GENERATE_MODEL
 from .generate import generate_summary
 from .glossary import Glossary
-from .ingest import fetch_huggingface_daily
+from .ingest import DEFAULT_ARXIV_CATEGORIES, fetch_all_sources
 from .log import PublishedLog
 from .models import PipelineResult
 from .publish import post_to_telegram, render_telegram_message, write_post
@@ -44,8 +44,15 @@ async def run_pipeline(
     client = client or AsyncAnthropic()
     pub_log = PublishedLog(log_path)
 
-    papers = await fetch_huggingface_daily(limit=daily_limit)
-    log.info("Fetched %d papers from HuggingFace daily", len(papers))
+    papers = await fetch_all_sources(
+        hf_limit=daily_limit,
+        arxiv_limit_per_cat=3,
+        arxiv_categories=DEFAULT_ARXIV_CATEGORIES,
+    )
+    log.info(
+        "Fetched %d unique papers from HF Daily + arXiv (%d categories)",
+        len(papers), len(DEFAULT_ARXIV_CATEGORIES),
+    )
 
     fresh = [p for p in papers if not pub_log.already_seen(p.arxiv_id)]
     log.info("%d are new (not in log)", len(fresh))

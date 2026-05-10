@@ -1,6 +1,7 @@
 ---
 import { getCollection, render } from "astro:content";
 import Layout from "../../layouts/Layout.astro";
+import FileViewer from "../../components/FileViewer.astro";
 
 export async function getStaticPaths() {
   const posts = await getCollection("posts");
@@ -15,49 +16,65 @@ const { Content } = await render(post);
 ---
 
 <Layout title={`${post.data.title} — Frontline`} description={post.data.tldr}>
-  <p class="meta">
-    <a href="/">← Стрічка</a>
-    <span class="dot">·</span>
-    <span class="arxiv">arXiv:{post.data.arxiv_id}</span>
-    <span class="dot">·</span>
-    <span>{post.data.read_min} хв читання</span>
-    <span class="dot">·</span>
-    <span>{post.data.publish_date}</span>
+  <p class="breadcrumb">
+    <a href="/">posts</a>
+    <span class="sep">/</span>
+    <span class="current">{post.id}.md</span>
   </p>
 
-  <h1>{post.data.title}</h1>
+  <FileViewer label={`posts/${post.id}.md`} icon="file">
+    <h1>{post.data.title}</h1>
 
-  <blockquote>
-    <strong>TL;DR.</strong> {post.data.tldr}
-  </blockquote>
+    <blockquote>
+      <strong>TL;DR.</strong> {post.data.tldr}
+    </blockquote>
 
-  <p class="tag-list">
-    {post.data.tags.map((tag) => <span class="tag">{tag}</span>)}
-  </p>
+    <p class="meta">
+      <span class="arxiv">arXiv:{post.data.arxiv_id}</span>
+      <span class="dot">·</span>
+      <span>{post.data.read_min} хв читання</span>
+      <span class="dot">·</span>
+      <span>{post.data.publish_date}</span>
+    </p>
 
-  <Content />
+    <p class="tag-list">
+      {post.data.tags.map((tag) => <span class="tag">{tag}</span>)}
+    </p>
 
-  <hr />
+    <Content />
 
-  <p>
-    <strong>Автори:</strong>{" "}
-    <span class="muted">{post.data.authors.join(", ")}</span>
-  </p>
-  <p>
-    <a href={post.data.arxiv_url} target="_blank" rel="noopener">
-      Читати оригінал на arXiv ↗
-    </a>{" "}
-    ·{" "}
-    <a
-      href={`https://github.com/Moonkeemoo/frontline/issues/new?title=Translation+issue:+${post.data.arxiv_id}&body=Post:+${post.id}%0A%0AIssue:+`}
-      target="_blank"
-      rel="noopener"
-    >
-      Повідомити про неточність
-    </a>
-  </p>
+    <hr />
+
+    <p>
+      <strong>Автори:</strong>{" "}
+      <span class="muted">{post.data.authors.join(", ")}</span>
+    </p>
+    <p>
+      <a href={post.data.arxiv_url} target="_blank" rel="noopener">
+        Читати оригінал на arXiv ↗
+      </a>{" "}
+      ·{" "}
+      <a
+        href={`https://github.com/Moonkeemoo/frontline/issues/new?title=Translation+issue:+${post.data.arxiv_id}&body=Post:+${post.id}%0A%0AIssue:+`}
+        target="_blank"
+        rel="noopener"
+      >
+        Повідомити про неточність
+      </a>
+    </p>
+  </FileViewer>
 </Layout>
 
 <style>
   .muted { color: var(--color-fg-muted); }
+  .breadcrumb {
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Consolas, monospace;
+    font-size: 14px;
+    color: var(--color-fg-muted);
+    margin: 0 0 12px;
+  }
+  .breadcrumb a { color: var(--color-link); text-decoration: none; }
+  .breadcrumb a:hover { text-decoration: underline; }
+  .breadcrumb .sep { margin: 0 6px; opacity: 0.5; }
+  .breadcrumb .current { color: var(--color-fg); }
 </style>

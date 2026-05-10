@@ -57,7 +57,7 @@ async def test_run_pipeline_publishes_clean_summaries(
     tmp_path, two_papers, monkeypatch
 ):
     monkeypatch.setattr(
-        "pipeline.run.fetch_huggingface_daily", AsyncMock(return_value=two_papers)
+        "pipeline.run.fetch_all_sources", AsyncMock(return_value=two_papers)
     )
     client = _fake_client(
         [_gen_text("Один"), _crit_text(), _gen_text("Два"), _crit_text()]
@@ -83,7 +83,7 @@ async def test_run_pipeline_routes_queue_and_reject(
     tmp_path, two_papers, monkeypatch
 ):
     monkeypatch.setattr(
-        "pipeline.run.fetch_huggingface_daily", AsyncMock(return_value=two_papers)
+        "pipeline.run.fetch_all_sources", AsyncMock(return_value=two_papers)
     )
     # Paper 1: queue. Paper 2: reject.
     client = _fake_client(
@@ -123,7 +123,7 @@ async def test_run_pipeline_skips_already_seen(
     )
 
     monkeypatch.setattr(
-        "pipeline.run.fetch_huggingface_daily", AsyncMock(return_value=two_papers)
+        "pipeline.run.fetch_all_sources", AsyncMock(return_value=two_papers)
     )
     client = _fake_client([_gen_text(), _crit_text()])
 
@@ -143,7 +143,7 @@ async def test_run_pipeline_respects_cost_cap(
     tmp_path, two_papers, monkeypatch
 ):
     monkeypatch.setattr(
-        "pipeline.run.fetch_huggingface_daily", AsyncMock(return_value=two_papers)
+        "pipeline.run.fetch_all_sources", AsyncMock(return_value=two_papers)
     )
     client = _fake_client(
         [_gen_text("Один"), _crit_text(), _gen_text("Два"), _crit_text()]
@@ -166,7 +166,7 @@ async def test_run_pipeline_dry_run_writes_nothing(
     tmp_path, two_papers, monkeypatch
 ):
     monkeypatch.setattr(
-        "pipeline.run.fetch_huggingface_daily", AsyncMock(return_value=two_papers)
+        "pipeline.run.fetch_all_sources", AsyncMock(return_value=two_papers)
     )
     client = _fake_client(
         [_gen_text("Один"), _crit_text(), _gen_text("Два"), _crit_text()]
@@ -190,7 +190,7 @@ async def test_run_pipeline_handles_llm_error_gracefully(
     tmp_path, two_papers, monkeypatch
 ):
     monkeypatch.setattr(
-        "pipeline.run.fetch_huggingface_daily", AsyncMock(return_value=two_papers)
+        "pipeline.run.fetch_all_sources", AsyncMock(return_value=two_papers)
     )
 
     client = SimpleNamespace()
