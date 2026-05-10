@@ -5,9 +5,11 @@ from pytest_httpx import HTTPXMock
 from pipeline.ingest import (
     ARXIV_RSS_BASE,
     HF_DAILY_URL,
+    IACR_RSS_URL,
     fetch_all_sources,
     fetch_arxiv_rss,
     fetch_huggingface_daily,
+    fetch_iacr_eprint,
 )
 
 HF_RESPONSE = [
@@ -101,6 +103,86 @@ async def test_arxiv_rss_parses_entries(httpx_mock: HTTPXMock):
     assert "A. Author" in first.authors
 
 
+IACR_RSS_XML = """<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0">
+<channel>
+  <title>Cryptology ePrint Archive</title>
+  <item>
+    <title>A New Lattice-Based Signature Scheme</title>
+    <link>https://eprint.iacr.org/2026/0501</link>
+    <description>We propose a new signature scheme.</description>
+    <author>Alice, Bob, Carol</author>
+    <pubDate>Fri, 09 May 2026 00:00:00 GMT</pubDate>
+  </item>
+  <item>
+    <title>Improved SNARK Construction</title>
+    <link>https://eprint.iacr.org/2026/0502</link>
+    <description>Reduces proof size by 40%.</description>
+    <author>Dave</author>
+  </item>
+</channel>
+</rss>"""
+
+
+async def test_iacr_eprint_parses_entries(httpx_mock: HTTPXMock):
+    httpx_mock.add_response(url=IACR_RSS_URL, content=IACR_RSS_XML.encode())
+    papers = await fetch_iacr_eprint(limit=10)
+    assert len(papers) == 2
+
+    first = papers[0]
+    assert first.arxiv_id == "2026/0501"
+    assert first.source == "iacr_eprint"
+    assert first.url == "https://eprint.iacr.org/2026/0501"
+    assert "Alice" in first.authors
+    assert first.source_label == "IACR:2026/0501"
+
+
+async def test_iacr_eprint_respects_limit(httpx_mock: HTTPXMock):
+    httpx_mock.add_response(url=IACR_RSS_URL, content=IACR_RSS_XML.encode())
+    papers = await fetch_iacr_eprint(limit=1)
+    assert len(papers) == 1
+
+
+async def test_fetch_all_sources_includes_iacr(httpx_mock: HTTPXMock):
+    httpx_mock.add_response(url=HF_DAILY_URL, json=HF_RESPONSE)
+    httpx_mock.add_response(
+        url=f"{ARXIV_RSS_BASE}/cs.LG", content=ARXIV_RSS_XML.encode()
+    )
+    httpx_mock.add_response(url=IACR_RSS_URL, content=IACR_RSS_XML.encode())
+
+    papers = await fetch_all_sources(
+        arxiv_categories=("cs.LG",),
+        hf_limit=10,
+        arxiv_limit_per_cat=10,
+        iacr_limit=10,
+        include_iacr=True,
+    )
+
+    sources = {p.source for p in papers}
+    assert "huggingface_daily" in sources
+    assert "arxiv_rss" in sources
+    assert "iacr_eprint" in sources
+
+    iacr_papers = [p for p in papers if p.source == "iacr_eprint"]
+    assert len(iacr_papers) == 2
+
+
+async def test_fetch_all_sources_can_skip_iacr(httpx_mock: HTTPXMock):
+    httpx_mock.add_response(url=HF_DAILY_URL, json=HF_RESPONSE)
+    httpx_mock.add_response(
+        url=f"{ARXIV_RSS_BASE}/cs.LG", content=ARXIV_RSS_XML.encode()
+    )
+    # IACR not mocked — would fail if called
+
+    papers = await fetch_all_sources(
+        arxiv_categories=("cs.LG",),
+        hf_limit=10,
+        arxiv_limit_per_cat=10,
+        include_iacr=False,
+    )
+    assert all(p.source != "iacr_eprint" for p in papers)
+
+
 async def test_fetch_all_sources_deduplicates_across_sources(httpx_mock: HTTPXMock):
     """If the same arxiv_id appears in HF and arXiv RSS, dedup keeps HF version."""
     # HF returns 2511.54321 (also in arXiv RSS below) + 2511.99999 (HF only)
@@ -128,7 +210,10 @@ async def test_fetch_all_sources_deduplicates_across_sources(httpx_mock: HTTPXMo
     )
 
     papers = await fetch_all_sources(
-        arxiv_categories=("cs.LG",), hf_limit=10, arxiv_limit_per_cat=10
+        arxiv_categories=("cs.LG",),
+        hf_limit=10,
+        arxiv_limit_per_cat=10,
+        include_iacr=False,
     )
 
     ids = [p.arxiv_id for p in papers]
@@ -146,7 +231,10 @@ async def test_fetch_all_sources_tolerates_one_source_failure(httpx_mock: HTTPXM
     httpx_mock.add_response(url=f"{ARXIV_RSS_BASE}/cs.LG", status_code=500)
 
     papers = await fetch_all_sources(
-        arxiv_categories=("cs.LG",), hf_limit=10, arxiv_limit_per_cat=5
+        arxiv_categories=("cs.LG",),
+        hf_limit=10,
+        arxiv_limit_per_cat=5,
+        include_iacr=False,
     )
     assert len(papers) == 2  # 2 from HF, 0 from broken arXiv
     assert all(p.source == "huggingface_daily" for p in papers)

@@ -5,7 +5,12 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-Source = Literal["huggingface_daily", "arxiv_rss", "openreview"]
+Source = Literal[
+    "huggingface_daily",
+    "arxiv_rss",
+    "iacr_eprint",
+    "openreview",
+]
 Severity = Literal["high", "medium", "low"]
 IssueCategory = Literal[
     "hallucination", "glossary", "why_matters", "tone", "grammar", "format"
@@ -15,13 +20,22 @@ Recommendation = Literal["publish", "queue_for_review", "regenerate"]
 
 
 class Paper(BaseModel):
-    arxiv_id: str
+    arxiv_id: str  # legacy field name; treats as external identifier per source
     title: str
     authors: list[str]
     abstract: str
     url: str
     submitted_at: datetime | None = None
     source: Source
+
+    @property
+    def source_label(self) -> str:
+        """Display prefix like 'arXiv:2511.12345' or 'IACR:2026/123'."""
+        prefix = {
+            "iacr_eprint": "IACR",
+            "openreview": "OpenReview",
+        }.get(self.source, "arXiv")
+        return f"{prefix}:{self.arxiv_id}"
 
 
 class SummaryUA(BaseModel):

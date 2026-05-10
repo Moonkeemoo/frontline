@@ -2,6 +2,7 @@
 import { getCollection } from "astro:content";
 import Layout from "../layouts/Layout.astro";
 import FileViewer from "../components/FileViewer.astro";
+import { sourceLabel } from "../utils";
 
 const posts = (await getCollection("posts")).sort(
   (a, b) =>
@@ -44,7 +45,7 @@ const posts = (await getCollection("posts")).sort(
               <a href={`/posts/${post.id}/`}>{post.data.title}</a>
             </h3>
             <p class="meta">
-              <span class="arxiv">arXiv:{post.data.arxiv_id}</span>
+              <span class="arxiv">{sourceLabel(post.data.source)}:{post.data.arxiv_id}</span>
               <span class="dot">·</span>
               <span>{post.data.read_min} хв</span>
               <span class="dot">·</span>

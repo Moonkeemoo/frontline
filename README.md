@@ -10,8 +10,8 @@
 
 ## Roadmap
 
-- **Phase 1** (MVP) — AI/ML research: arXiv `cs.LG`/`cs.AI`/`cs.CL`/`cs.CV` + HuggingFace Papers + OpenReview. Сайт + Telegram-канал.
-- **Phase 2** — вся CS: + USENIX, IACR, ACL Anthology, CVF.
+- ✅ **Phase 1** (MVP) — AI/ML research: arXiv `cs.LG`/`cs.AI`/`cs.CL`/`cs.CV` + HuggingFace Papers. Сайт + Telegram.
+- 🚧 **Phase 2** — вся CS: ✅ 28 arXiv-категорій (AI/ML, systems, SE, security, theory, robotics, HCI, …) + ✅ IACR ePrint (crypto). USENIX/ACL/CVF/OpenReview — потребують batch-mode (раз на конференцію), відкладено.
 - **Phase 3** — + research-блоги корпорацій (Anthropic/Google/Meta/Apple/MSR) + великі OSS-релізи.
 - **Phase 4** — + regulatory (EU AI Act) + open-data ініціативи.
 

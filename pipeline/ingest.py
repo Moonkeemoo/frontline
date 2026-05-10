@@ -12,15 +12,25 @@ from .models import Paper
 
 HF_DAILY_URL = "https://huggingface.co/api/daily_papers"
 ARXIV_RSS_BASE = "http://export.arxiv.org/rss"
+IACR_RSS_URL = "https://eprint.iacr.org/rss/rss.xml"
 
-# Default arXiv categories to monitor — broader than just AI/ML.
-# cs.LG  — machine learning             cs.SE  — software engineering
-# cs.AI  — artificial intelligence      cs.DB  — databases
-# cs.CL  — computation & language       cs.CR  — cryptography & security
-# cs.CV  — computer vision              cs.DC  — distributed/parallel computing
+# arXiv categories — Phase 2 covers broad CS, not just AI/ML.
+# Grouped by cluster for review:
 DEFAULT_ARXIV_CATEGORIES = (
-    "cs.LG", "cs.AI", "cs.CL", "cs.CV",
-    "cs.SE", "cs.DB", "cs.CR", "cs.DC",
+    # AI / ML / NLP / vision
+    "cs.LG", "cs.AI", "cs.CL", "cs.CV", "cs.NE", "stat.ML",
+    # Systems / infra / networking
+    "cs.DC", "cs.OS", "cs.AR", "cs.PF", "cs.NI",
+    # Software engineering / languages / theory
+    "cs.SE", "cs.PL", "cs.LO", "cs.FL",
+    # Data / information retrieval / structures
+    "cs.DB", "cs.IR", "cs.DS",
+    # Security / cryptography / information theory
+    "cs.CR", "cs.IT",
+    # Applications: robotics, graphics, HCI, sound, multi-agent
+    "cs.RO", "cs.GR", "cs.HC", "cs.SD", "cs.MA",
+    # Theory: complexity, geometry, game theory
+    "cs.CC", "cs.CG", "cs.GT",
 )
 
 log = logging.getLogger(__name__)
@@ -121,18 +131,67 @@ async def fetch_arxiv_rss(
     return papers
 
 
+async def fetch_iacr_eprint(
+    *,
+    client: httpx.AsyncClient | None = None,
+    limit: int = 10,
+) -> list[Paper]:
+    """Fetch recent IACR ePrint Archive submissions (cryptography)."""
+    owns_client = client is None
+    client = client or httpx.AsyncClient(timeout=30)
+    try:
+        resp = await client.get(IACR_RSS_URL)
+        resp.raise_for_status()
+        body = resp.text
+    finally:
+        if owns_client:
+            await client.aclose()
+
+    feed = feedparser.parse(body)
+    papers: list[Paper] = []
+    for entry in feed.entries[:limit]:
+        link = entry.get("link", "")
+        m = re.search(r"eprint\.iacr\.org/(\d{4}/\d+)", link)
+        if not m:
+            continue
+        eprint_id = m.group(1)  # "2026/123"
+        title = re.sub(r"<[^>]+>", "", entry.get("title", "")).strip()
+        abstract = re.sub(r"<[^>]+>", "", entry.get("summary", "")).strip()
+        authors_raw = entry.get("author", "")
+        authors = [a.strip() for a in authors_raw.split(",") if a.strip()] or [
+            "Unknown"
+        ]
+        try:
+            papers.append(
+                Paper(
+                    arxiv_id=eprint_id,
+                    title=title,
+                    authors=authors,
+                    abstract=abstract,
+                    url=link,
+                    submitted_at=_parse_struct(entry.get("published_parsed")),
+                    source="iacr_eprint",
+                )
+            )
+        except Exception:
+            continue
+    return papers
+
+
 async def fetch_all_sources(
     *,
     client: httpx.AsyncClient | None = None,
     arxiv_categories: tuple[str, ...] = DEFAULT_ARXIV_CATEGORIES,
     hf_limit: int = 10,
-    arxiv_limit_per_cat: int = 5,
+    arxiv_limit_per_cat: int = 2,
+    iacr_limit: int = 5,
+    include_iacr: bool = True,
 ) -> list[Paper]:
-    """Aggregate papers from HuggingFace Daily + multiple arXiv categories.
+    """Aggregate papers from HuggingFace Daily + multiple arXiv categories
+    + IACR ePrint (crypto). Returns deduplicated list (by arxiv_id) preserving
+    HF-first ordering (HF Papers are human-curated, higher signal).
 
-    Returns deduplicated list (by arxiv_id) preserving HF-first ordering
-    (HF Papers are human-curated, higher signal). Source failures are
-    logged but don't crash — partial results are still returned.
+    Source failures are logged but don't crash — partial results returned.
     """
     owns_client = client is None
     client = client or httpx.AsyncClient(timeout=30)
@@ -142,13 +201,18 @@ async def fetch_all_sources(
             tasks.append(
                 fetch_arxiv_rss(cat, client=client, limit=arxiv_limit_per_cat)
             )
+        if include_iacr:
+            tasks.append(fetch_iacr_eprint(client=client, limit=iacr_limit))
+
         results = await asyncio.gather(*tasks, return_exceptions=True)
+
+        labels = ["huggingface_daily", *arxiv_categories]
+        if include_iacr:
+            labels.append("iacr_eprint")
 
         all_papers: list[Paper] = []
         seen: set[str] = set()
-        for source_label, result in zip(
-            ("huggingface_daily", *arxiv_categories), results, strict=False
-        ):
+        for source_label, result in zip(labels, results, strict=False):
             if isinstance(result, BaseException):
                 log.warning("Source %s failed: %s", source_label, result)
                 continue

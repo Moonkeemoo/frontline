@@ -69,6 +69,17 @@ def test_post_filename_format(sample_paper, sample_summary):
     assert fn.endswith(".md")
 
 
+def test_post_filename_sanitizes_iacr_slash(sample_paper, sample_summary):
+    """IACR ids look like '2026/0501' — slash must not break filename."""
+    today = datetime(2026, 5, 9)
+    iacr_paper = sample_paper.model_copy(
+        update={"arxiv_id": "2026/0501", "source": "iacr_eprint"}
+    )
+    fn = post_filename(iacr_paper, sample_summary, today=today)
+    assert "/" not in fn
+    assert "2026-0501" in fn
+
+
 def test_write_post_creates_file(tmp_path, sample_paper, sample_summary):
     out = tmp_path / "posts"
     path = write_post(sample_paper, sample_summary, output_dir=out)

@@ -9,7 +9,12 @@ const baseSchema = z.object({
   arxiv_id: z.string(),
   arxiv_url: z.string().url(),
   authors: z.array(z.string()),
-  source: z.enum(["huggingface_daily", "arxiv_rss", "openreview"]),
+  source: z.enum([
+    "huggingface_daily",
+    "arxiv_rss",
+    "iacr_eprint",
+    "openreview",
+  ]),
   publish_date: z.string(),
   submitted_at: z.string().optional(),
 });

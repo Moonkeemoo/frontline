@@ -21,19 +21,44 @@ import FileViewer from "../components/FileViewer.astro";
     <h2>Як це працює</h2>
 
     <p>
-      Щоранку pipeline бере свіжі пейпери з <a
-        href="https://huggingface.co/papers"
-        target="_blank"
-        rel="noopener">HuggingFace Papers</a> і <a
-        href="https://arxiv.org"
-        target="_blank"
-        rel="noopener">arXiv</a> (8 категорій: <code>cs.LG</code>,
-      <code>cs.AI</code>, <code>cs.CL</code>, <code>cs.CV</code>,
-      <code>cs.SE</code>, <code>cs.DB</code>, <code>cs.CR</code>,
-      <code>cs.DC</code>). Для кожного пейпера мовна модель (Claude Sonnet)
-      генерує українське резюме, а друга модель (Claude Opus) перевіряє переклад
-      на термінологічні ляпи та галюцинації. Лише чисті резюме автоматично
-      публікуються тут і в Telegram-каналі.
+      Щоранку pipeline бере свіжі пейпери з трьох джерел:
+    </p>
+    <ul>
+      <li>
+        <a
+          href="https://huggingface.co/papers"
+          target="_blank"
+          rel="noopener">HuggingFace Papers</a> — щоденна curated добірка,
+        ~10 пейперів за день
+      </li>
+      <li>
+        <a href="https://arxiv.org" target="_blank" rel="noopener">arXiv</a>{" "}
+        — <strong>28 категорій</strong> (вся CS): від AI/ML до systems,
+        software engineering, security, robotics, theory.
+        Категорії: <code>cs.LG</code>, <code>cs.AI</code>, <code>cs.CL</code>,
+        <code>cs.CV</code>, <code>cs.NE</code>, <code>stat.ML</code>,
+        <code>cs.DC</code>, <code>cs.OS</code>, <code>cs.AR</code>,
+        <code>cs.PF</code>, <code>cs.NI</code>, <code>cs.SE</code>,
+        <code>cs.PL</code>, <code>cs.LO</code>, <code>cs.FL</code>,
+        <code>cs.DB</code>, <code>cs.IR</code>, <code>cs.DS</code>,
+        <code>cs.CR</code>, <code>cs.IT</code>, <code>cs.RO</code>,
+        <code>cs.GR</code>, <code>cs.HC</code>, <code>cs.SD</code>,
+        <code>cs.MA</code>, <code>cs.CC</code>, <code>cs.CG</code>,
+        <code>cs.GT</code>
+      </li>
+      <li>
+        <a
+          href="https://eprint.iacr.org/"
+          target="_blank"
+          rel="noopener">IACR ePrint Archive</a> — нові криптографічні
+        дослідження (де-факто єдине місце де є криптографія до peer review)
+      </li>
+    </ul>
+    <p>
+      Для кожного пейпера мовна модель (Claude Sonnet) генерує українське
+      резюме, а друга модель (Claude Opus) перевіряє переклад на термінологічні
+      ляпи та галюцинації. Лише чисті резюме автоматично публікуються тут і в
+      Telegram-каналі.
     </p>
 
     <h2>Pipeline у трьох кроках</h2>

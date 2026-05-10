@@ -2,6 +2,7 @@
 import { getCollection, render } from "astro:content";
 import Layout from "../../layouts/Layout.astro";
 import FileViewer from "../../components/FileViewer.astro";
+import { sourceLabel } from "../../utils";
 
 export async function getStaticPaths() {
   const items = await getCollection("queue");
@@ -41,7 +42,7 @@ const issues = critique?.issues ?? [];
     </blockquote>
 
     <p class="meta">
-      <span class="arxiv">arXiv:{item.data.arxiv_id}</span>
+      <span class="arxiv">{sourceLabel(item.data.source)}:{item.data.arxiv_id}</span>
       <span class="dot">·</span>
       <span>{item.data.publish_date}</span>
     </p>

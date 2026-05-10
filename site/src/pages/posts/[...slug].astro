@@ -2,6 +2,7 @@
 import { getCollection, render } from "astro:content";
 import Layout from "../../layouts/Layout.astro";
 import FileViewer from "../../components/FileViewer.astro";
+import { sourceLabel } from "../../utils";
 
 export async function getStaticPaths() {
   const posts = await getCollection("posts");
@@ -30,7 +31,7 @@ const { Content } = await render(post);
     </blockquote>
 
     <p class="meta">
-      <span class="arxiv">arXiv:{post.data.arxiv_id}</span>
+      <span class="arxiv">{sourceLabel(post.data.source)}:{post.data.arxiv_id}</span>
       <span class="dot">·</span>
       <span>{post.data.read_min} хв читання</span>
       <span class="dot">·</span>
@@ -51,7 +52,7 @@ const { Content } = await render(post);
     </p>
     <p>
       <a href={post.data.arxiv_url} target="_blank" rel="noopener">
-        Читати оригінал на arXiv ↗
+        Читати оригінал {post.data.source === "iacr_eprint" ? "у IACR ePrint" : post.data.source === "openreview" ? "на OpenReview" : "на arXiv"} ↗
       </a>{" "}
       ·{" "}
       <a

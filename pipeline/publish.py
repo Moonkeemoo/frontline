@@ -83,7 +83,8 @@ def slugify(text: str, max_len: int = 60) -> str:
 
 def post_filename(paper: Paper, summary: SummaryUA, *, today: datetime | None = None) -> str:
     today = today or datetime.now()
-    return f"{today:%Y-%m-%d}-{paper.arxiv_id}-{slugify(summary.title_ua)}.md"
+    safe_id = re.sub(r"[^\w.-]", "-", paper.arxiv_id)  # IACR ids use slash
+    return f"{today:%Y-%m-%d}-{safe_id}-{slugify(summary.title_ua)}.md"
 
 
 def write_post(
