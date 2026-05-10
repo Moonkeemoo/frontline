@@ -17,6 +17,7 @@
     "yaml": "^2.8.4"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260510.1",
     "@types/node": "^25.6.2"
   }
 }

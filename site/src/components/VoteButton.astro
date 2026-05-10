@@ -1,0 +1,70 @@
+---
+interface Props {
+  postId: string;
+  size?: "sm" | "lg";
+}
+const { postId, size = "sm" } = Astro.props;
+---
+
+<button
+  class={`vote-btn vote-btn-${size}`}
+  data-vote-id={postId}
+  data-count="0"
+  type="button"
+  aria-label="Upvote"
+>
+  <svg
+    class="vote-icon"
+    viewBox="0 0 16 16"
+    width="14"
+    height="14"
+    fill="currentColor"
+    aria-hidden="true"
+  >
+    <path d="M3.22 10.53a.749.749 0 0 1 0-1.06l4.25-4.25a.749.749 0 0 1 1.06 0l4.25 4.25a.749.749 0 1 1-1.06 1.06L8 6.811 4.28 10.53a.749.749 0 0 1-1.06 0Z"/>
+  </svg>
+  <span class="vote-count">·</span>
+</button>
+
+<style>
+  .vote-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 10px;
+    background: var(--color-canvas-subtle);
+    border: 1px solid var(--color-border);
+    border-radius: 2em;
+    color: var(--color-fg-muted);
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 18px;
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Consolas, monospace;
+    transition: color 0.15s, border-color 0.15s, background 0.15s;
+    user-select: none;
+  }
+  .vote-btn-lg {
+    font-size: 14px;
+    padding: 4px 14px;
+    gap: 6px;
+  }
+  .vote-btn:hover:not(.voted):not(.voting) {
+    color: var(--color-link);
+    border-color: var(--color-link);
+  }
+  .vote-btn.voted {
+    color: var(--color-link);
+    background: rgba(9, 105, 218, 0.08);
+    border-color: var(--color-link);
+    cursor: default;
+  }
+  @media (prefers-color-scheme: dark) {
+    .vote-btn.voted {
+      background: rgba(47, 129, 247, 0.15);
+    }
+  }
+  .vote-btn.voting { opacity: 0.5; cursor: wait; }
+  .vote-icon { flex-shrink: 0; }
+  .vote-btn.voted .vote-icon { transform: rotate(0deg); }
+</style>

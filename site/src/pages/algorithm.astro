@@ -284,6 +284,21 @@ publish/    queue/    reject
       → 1+ medium. <code>reject</code> → 1+ high.
     </p>
 
+    <h2>Голосування</h2>
+
+    <p>
+      На кожному пості є кнопка <code>👍</code>. Голоси зберігаються в
+      Cloudflare KV (namespace <code>FRONTLINE_VOTES</code>), дедуплікація
+      по SHA-256(IP + User-Agent) з TTL 1 рік. Free tier (100k reads/день)
+      комфортно покриває старт.
+    </p>
+    <ul>
+      <li>Голос — анонімний, без логіну</li>
+      <li>Один пристрій + IP — один голос на пост</li>
+      <li>localStorage-fallback для local dev (тоді бачиш лише власні голоси)</li>
+      <li>Сортування «за голосами» доступне у фільтрі стрічки</li>
+    </ul>
+
     <h2>Що алгоритм НЕ робить (і чому)</h2>
 
     <ul>

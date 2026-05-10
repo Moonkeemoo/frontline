@@ -2,6 +2,7 @@
 import { getCollection } from "astro:content";
 import Layout from "../layouts/Layout.astro";
 import FileViewer from "../components/FileViewer.astro";
+import VoteButton from "../components/VoteButton.astro";
 import { sourceLabel } from "../utils";
 
 const posts = (await getCollection("posts")).sort(
@@ -10,8 +11,6 @@ const posts = (await getCollection("posts")).sort(
     new Date(a.data.publish_date).getTime(),
 );
 
-// Group posts by primary category (first tag is most representative;
-// LLM-generated tags are reasonably stable: llm, agents, security, etc.)
 const CATEGORY_LABELS: Record<string, string> = {
   llm: "LLM & Language Models",
   agents: "AI Agents",
@@ -31,7 +30,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   benchmark: "Benchmarks & Evaluation",
 };
 
-function categoryKey(post: typeof posts[number]): string {
+function categoryKey(post: (typeof posts)[number]): string {
   return post.data.tags[0] || "general";
 }
 function categoryLabel(key: string): string {
@@ -59,87 +58,258 @@ const groupedEntries = Array.from(grouped.entries()).sort(
     </blockquote>
 
     <p>
-      Автоматичний агрегатор, що збирає свіжі дослідження з <a
+      Автоматичний агрегатор з <a
         href="https://huggingface.co/papers"
         target="_blank"
-        rel="noopener">HuggingFace Papers</a> і <a
+        rel="noopener">HuggingFace Papers</a>, <a
         href="https://arxiv.org"
         target="_blank"
-        rel="noopener">arXiv</a> (категорії <code>cs.LG</code>, <code>cs.AI</code>,
-      <code>cs.CL</code>, <code>cs.CV</code>, <code>cs.SE</code>,
-      <code>cs.DB</code>, <code>cs.CR</code>, <code>cs.DC</code>), генерує
-      українською мовою резюме і публікує сюди + у Telegram.
+        rel="noopener">arXiv</a> (28 категорій CS) та <a
+        href="https://eprint.iacr.org/"
+        target="_blank"
+        rel="noopener">IACR ePrint</a>. Як обираємо — <a
+        href="/algorithm/">ALGORITHM.md</a>.
     </p>
 
-    <h2>Категорії</h2>
+    <h2>Стрічка</h2>
 
     {posts.length === 0 ? (
       <p><em>Поки що пусто — pipeline ще не запустився сьогодні.</em></p>
     ) : (
       <>
-        <p class="category-toc">
-          {groupedEntries.map(([key, items]) => (
-            <a href={`#cat-${key}`} class="category-chip">
-              {categoryLabel(key)} <span class="cnt">{items.length}</span>
-            </a>
-          ))}
+        <div class="filter-bar" role="group" aria-label="Часовий період">
+          <button class="filter-chip" data-period="today" type="button">Сьогодні</button>
+          <button class="filter-chip" data-period="week" type="button">Тиждень</button>
+          <button class="filter-chip" data-period="2weeks" type="button">2 тижні</button>
+          <button class="filter-chip" data-period="month" type="button">Місяць</button>
+          <button class="filter-chip active" data-period="all" type="button">Все</button>
+          <span class="filter-hint">·</span>
+          <button class="filter-chip" data-sort="date" type="button">за датою</button>
+          <button class="filter-chip" data-sort="votes" type="button">за голосами</button>
+        </div>
+
+        <p id="empty-state" class="empty-state" hidden>
+          <em>За цей період постів немає.</em>
         </p>
 
-        {groupedEntries.map(([key, items]) => (
-          <>
-            <h3 id={`cat-${key}`} class="category-heading">
-              {categoryLabel(key)}{" "}
-              <span class="muted">({items.length})</span>
-            </h3>
-            <ul class="post-list">
-              {items.map((post) => (
-                <li>
-                  <h4 class="post-title">
-                    <a href={`/posts/${post.id}/`}>{post.data.title}</a>
-                  </h4>
-                  <p class="meta">
-                    <span class="arxiv">{sourceLabel(post.data.source)}:{post.data.arxiv_id}</span>
-                    <span class="dot">·</span>
-                    <span>{post.data.read_min} хв</span>
-                    <span class="dot">·</span>
-                    <span>{post.data.publish_date}</span>
-                  </p>
-                  <p class="post-tldr">{post.data.tldr}</p>
-                  <p class="tag-list">
-                    {post.data.tags.map((tag) => (
-                      <span class="tag">{tag}</span>
-                    ))}
-                  </p>
-                </li>
-              ))}
-            </ul>
-          </>
-        ))}
+        <div id="feed">
+          {groupedEntries.map(([key, items]) => (
+            <section class="cat-section" data-category={key}>
+              <h3 id={`cat-${key}`} class="category-heading">
+                {categoryLabel(key)}{" "}
+                <span class="muted cat-count">({items.length})</span>
+              </h3>
+              <ul class="post-list">
+                {items.map((post) => (
+                  <li
+                    class="post-card"
+                    data-post-id={post.id}
+                    data-publish-date={post.data.publish_date}
+                  >
+                    <div class="post-row">
+                      <div class="post-main">
+                        <h4 class="post-title">
+                          <a href={`/posts/${post.id}/`}>{post.data.title}</a>
+                        </h4>
+                        <p class="meta">
+                          <span class="arxiv">{sourceLabel(post.data.source)}:{post.data.arxiv_id}</span>
+                          <span class="dot">·</span>
+                          <span>{post.data.read_min} хв</span>
+                          <span class="dot">·</span>
+                          <span>{post.data.publish_date}</span>
+                        </p>
+                        <p class="post-tldr">{post.data.tldr}</p>
+                        <p class="tag-list">
+                          {post.data.tags.map((tag) => (
+                            <span class="tag">{tag}</span>
+                          ))}
+                        </p>
+                      </div>
+                      <div class="post-vote">
+                        <VoteButton postId={post.id} size="sm" />
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ))}
+        </div>
       </>
     )}
 
     <h2>Про проєкт</h2>
     <p>
-      Як працює pipeline і чому ми робимо саме так — <a href="/about/"
-        >ABOUT.md</a
-      >. Що зараз у черзі на ревʼю — <a href="/queue/">queue/</a>.
+      Як працює pipeline і чому ми робимо саме так — <a href="/about/">ABOUT.md</a>.
+      Що зараз у черзі на ревʼю — <a href="/queue/">queue/</a>.
     </p>
   </FileViewer>
 </Layout>
 
+<script>
+  // Time filter + sort logic. Pure DOM manipulation, URL-stateful.
+  const DAYS: Record<string, number> = {
+    today: 1,
+    week: 7,
+    "2weeks": 14,
+    month: 30,
+    all: Infinity,
+  };
+
+  function applyPeriod(period: string) {
+    const cutoff = Date.now() - DAYS[period] * 86400000;
+    document.querySelectorAll<HTMLElement>(".post-card").forEach((card) => {
+      const dateStr = card.dataset.publishDate || "";
+      const ts = new Date(dateStr).getTime();
+      const visible = isFinite(cutoff) ? ts >= cutoff : true;
+      card.style.display = visible ? "" : "none";
+    });
+
+    let totalVisible = 0;
+    document.querySelectorAll<HTMLElement>(".cat-section").forEach((section) => {
+      const visibleInCat = Array.from(
+        section.querySelectorAll<HTMLElement>(".post-card"),
+      ).filter((c) => c.style.display !== "none").length;
+      totalVisible += visibleInCat;
+      const countEl = section.querySelector<HTMLElement>(".cat-count");
+      if (countEl) countEl.textContent = `(${visibleInCat})`;
+      section.style.display = visibleInCat > 0 ? "" : "none";
+    });
+
+    const empty = document.getElementById("empty-state");
+    if (empty) empty.hidden = totalVisible > 0;
+
+    document.querySelectorAll<HTMLElement>("[data-period]").forEach((btn) => {
+      btn.classList.toggle("active", btn.dataset.period === period);
+    });
+
+    const url = new URL(window.location.href);
+    if (period === "all") url.searchParams.delete("period");
+    else url.searchParams.set("period", period);
+    history.replaceState(null, "", url.toString());
+  }
+
+  function applySort(mode: string) {
+    document.querySelectorAll<HTMLElement>(".cat-section").forEach((section) => {
+      const list = section.querySelector<HTMLElement>(".post-list");
+      if (!list) return;
+      const cards = Array.from(list.querySelectorAll<HTMLElement>(".post-card"));
+      cards.sort((a, b) => {
+        if (mode === "votes") {
+          const va = Number(
+            a.querySelector<HTMLElement>("[data-vote-id]")?.dataset.count || "0",
+          );
+          const vb = Number(
+            b.querySelector<HTMLElement>("[data-vote-id]")?.dataset.count || "0",
+          );
+          if (vb !== va) return vb - va;
+        }
+        const da = new Date(a.dataset.publishDate || "").getTime();
+        const db = new Date(b.dataset.publishDate || "").getTime();
+        return db - da;
+      });
+      cards.forEach((c) => list.appendChild(c));
+    });
+    document.querySelectorAll<HTMLElement>("[data-sort]").forEach((btn) => {
+      btn.classList.toggle("active", btn.dataset.sort === mode);
+    });
+
+    const url = new URL(window.location.href);
+    if (mode === "date") url.searchParams.delete("sort");
+    else url.searchParams.set("sort", mode);
+    history.replaceState(null, "", url.toString());
+  }
+
+  function init() {
+    const url = new URL(window.location.href);
+    const initialPeriod = url.searchParams.get("period") || "all";
+    const initialSort = url.searchParams.get("sort") || "date";
+
+    document.querySelectorAll<HTMLElement>("[data-period]").forEach((btn) => {
+      btn.addEventListener("click", () => applyPeriod(btn.dataset.period!));
+    });
+    document.querySelectorAll<HTMLElement>("[data-sort]").forEach((btn) => {
+      btn.addEventListener("click", () => applySort(btn.dataset.sort!));
+    });
+
+    applyPeriod(initialPeriod);
+
+    // Sort by votes after votes load (next tick)
+    if (initialSort === "votes") {
+      setTimeout(() => applySort("votes"), 800);
+    } else {
+      applySort("date");
+    }
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init);
+  } else {
+    init();
+  }
+</script>
+
 <style>
+  .filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+    margin: 16px 0 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--color-border-muted);
+  }
+  .filter-chip {
+    padding: 4px 12px;
+    background: var(--color-canvas);
+    border: 1px solid var(--color-border);
+    border-radius: 2em;
+    font-size: 13px;
+    color: var(--color-fg-muted);
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s;
+  }
+  .filter-chip:hover {
+    border-color: var(--color-link);
+    color: var(--color-link);
+  }
+  .filter-chip.active {
+    background: var(--color-fg);
+    color: var(--color-canvas);
+    border-color: var(--color-fg);
+  }
+  .filter-hint {
+    color: var(--color-fg-muted);
+    margin: 0 4px;
+    opacity: 0.5;
+  }
+
+  .empty-state {
+    padding: 32px 0;
+    text-align: center;
+    color: var(--color-fg-muted);
+  }
+
   .post-list {
     list-style: none;
     padding-left: 0 !important;
   }
-  .post-list > li {
+  .post-card {
     border-top: 1px solid var(--color-border-muted);
     padding: 20px 0;
   }
-  .post-list > li:last-child {
+  .post-card:last-child {
     border-bottom: 1px solid var(--color-border-muted);
   }
   .post-list > li + li { margin-top: 0; }
+  .post-row {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+  }
+  .post-main { flex: 1; min-width: 0; }
+  .post-vote { flex-shrink: 0; padding-top: 4px; }
   .post-title {
     font-size: 1.2em !important;
     margin: 0 0 6px !important;
@@ -153,33 +323,6 @@ const groupedEntries = Array.from(grouped.entries()).sort(
     color: var(--color-fg);
   }
 
-  .category-toc {
-    display: flex !important;
-    gap: 8px;
-    flex-wrap: wrap;
-    margin: 16px 0 24px !important;
-  }
-  .category-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 4px 10px;
-    background: var(--color-canvas-subtle);
-    border: 1px solid var(--color-border);
-    border-radius: 2em;
-    font-size: 13px;
-    color: var(--color-fg) !important;
-    text-decoration: none !important;
-  }
-  .category-chip:hover {
-    border-color: var(--color-link);
-    color: var(--color-link) !important;
-  }
-  .category-chip .cnt {
-    color: var(--color-fg-muted);
-    font-family: ui-monospace, SFMono-Regular, "SF Mono", Consolas, monospace;
-    font-size: 11px;
-  }
   .category-heading {
     border-top: 1px solid var(--color-border-muted);
     padding-top: 16px !important;

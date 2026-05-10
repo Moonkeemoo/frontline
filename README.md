@@ -43,13 +43,40 @@ uv run ruff check pipeline/ tests/         # лінт
 
 ## Deploy
 
-Pipeline запускається автоматично через GitHub Actions:
+### Pipeline (GitHub Actions)
+
 - **Daily cron** `06:00 UTC` (`.github/workflows/daily.yml`) — fetches HF Papers, generates+critiques, commits new posts back to repo
-- **CI on PR** (`.github/workflows/ci.yml`) — lint + 47 тестів
+- **CI on PR** (`.github/workflows/ci.yml`) — lint + tests
 
 Required GitHub secrets: `ANTHROPIC_API_KEY`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHANNEL_ID`.
 
 При фейлі pipeline-у автоматично створюється issue з лінком на failed run.
+
+### Site (Cloudflare Pages)
+
+```bash
+cd site && npm run build  # вивід у site/dist/
+```
+
+Cloudflare Pages → Connect to Git → repo `Moonkeemoo/frontline`:
+- **Build command:** `cd site && npm install && npm run build`
+- **Output directory:** `site/dist`
+- **Root directory:** `/` (project root, not `site/`)
+
+### Voting backend (Cloudflare KV)
+
+Голоси зберігаються в Cloudflare KV namespace через Pages Functions у `site/functions/api/`.
+
+**One-time setup:**
+1. Cloudflare Dashboard → Workers & Pages → KV → Create namespace `FRONTLINE_VOTES`
+2. Pages project → Settings → Functions → KV namespace bindings:
+   - Variable name: `FRONTLINE_VOTES`
+   - KV namespace: оберіть створений
+3. Redeploy (Pages → Deployments → Retry build)
+
+Без цього кроку сайт працює, але голосування fallback-ить на localStorage (per-device only). API endpoints повертають `configured: false`.
+
+Дедуплікація: SHA-256(IP + User-Agent), TTL 1 рік. Free tier KV (100k reads + 1k writes/day) комфортно покриває старт.
 
 ## Принципи
 
