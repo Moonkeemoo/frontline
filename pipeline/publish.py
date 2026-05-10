@@ -7,14 +7,23 @@ from pathlib import Path
 import frontmatter
 import httpx
 
-from .models import Paper, SummaryUA
+from .models import CritiqueResult, Paper, SummaryUA
 
 TELEGRAM_API = "https://api.telegram.org/bot{token}/sendMessage"
 MAX_TELEGRAM_LEN = 4096
 
 
-def render_post_markdown(paper: Paper, summary: SummaryUA) -> str:
-    """Render an Astro-compatible markdown post with frontmatter."""
+def render_post_markdown(
+    paper: Paper,
+    summary: SummaryUA,
+    *,
+    critique: CritiqueResult | None = None,
+) -> str:
+    """Render an Astro-compatible markdown post with frontmatter.
+
+    If `critique` is passed, it is embedded under a `critique:` key — used
+    for queue items so reviewers can see what the critic flagged.
+    """
     fm: dict = {
         "title": summary.title_ua,
         "tldr": summary.tldr_ua,
@@ -28,6 +37,8 @@ def render_post_markdown(paper: Paper, summary: SummaryUA) -> str:
     }
     if paper.submitted_at:
         fm["submitted_at"] = paper.submitted_at.isoformat()
+    if critique is not None:
+        fm["critique"] = critique.model_dump()
 
     parts: list[str] = [
         "## Що зробили",
@@ -81,10 +92,14 @@ def write_post(
     *,
     output_dir: Path,
     today: datetime | None = None,
+    critique: CritiqueResult | None = None,
 ) -> Path:
     output_dir.mkdir(parents=True, exist_ok=True)
     path = output_dir / post_filename(paper, summary, today=today)
-    path.write_text(render_post_markdown(paper, summary), encoding="utf-8")
+    path.write_text(
+        render_post_markdown(paper, summary, critique=critique),
+        encoding="utf-8",
+    )
     return path
 
 

@@ -10,121 +10,70 @@ const posts = (await getCollection("posts")).sort(
 ---
 
 <Layout>
-  <section class="hero">
-    <h1>Свіжі AI/ML дослідження українською</h1>
-    <p class="lead">
-      TL;DR, контекст для українського IT-сектора, лінк на оригінал. Автоматично
-      курується щодня з arXiv та HuggingFace Papers.
-    </p>
-  </section>
+  <h1>Frontline</h1>
+  <p>
+    Свіжі AI/ML дослідження українською — TL;DR, прикладний контекст для
+    українського IT-сектора, лінк на першоджерело. Автоматично курується
+    щодня з <a href="https://huggingface.co/papers" target="_blank" rel="noopener"
+      >HuggingFace Papers</a> і <a
+      href="https://arxiv.org"
+      target="_blank"
+      rel="noopener">arXiv</a>.
+  </p>
 
-  <section class="posts">
-    {posts.length === 0 && (
-      <p class="muted">Поки що пусто — pipeline ще не запустився сьогодні.</p>
-    )}
-    {posts.map((post) => (
-      <article class="post-card">
-        <a href={`/posts/${post.id}/`} class="post-link">
-          <header>
-            <h2>{post.data.title}</h2>
-            <div class="meta">
-              <span class="arxiv">arXiv:{post.data.arxiv_id}</span>
-              <span class="dot">·</span>
-              <span>{post.data.read_min} хв</span>
-              <span class="dot">·</span>
-              <span>{post.data.publish_date}</span>
-            </div>
-          </header>
-          <p class="tldr">{post.data.tldr}</p>
-          <div class="tags">
+  <h2>Останні пости</h2>
+
+  {posts.length === 0 ? (
+    <p><em>Поки що пусто — pipeline ще не запустився сьогодні.</em></p>
+  ) : (
+    <ul class="post-list">
+      {posts.map((post) => (
+        <li>
+          <h3 class="post-title">
+            <a href={`/posts/${post.id}/`}>{post.data.title}</a>
+          </h3>
+          <p class="meta">
+            <span class="arxiv">arXiv:{post.data.arxiv_id}</span>
+            <span class="dot">·</span>
+            <span>{post.data.read_min} хв</span>
+            <span class="dot">·</span>
+            <span>{post.data.publish_date}</span>
+          </p>
+          <p class="post-tldr">{post.data.tldr}</p>
+          <p class="tag-list">
             {post.data.tags.map((tag) => (
-              <span class="tag">#{tag}</span>
+              <span class="tag">{tag}</span>
             ))}
-          </div>
-        </a>
-      </article>
-    ))}
-  </section>
+          </p>
+        </li>
+      ))}
+    </ul>
+  )}
 </Layout>
 
 <style>
-  .hero {
-    margin-bottom: 3rem;
+  .post-list {
+    list-style: none;
+    padding-left: 0;
   }
-  .hero h1 {
-    font-size: 2.4rem;
-    margin-bottom: 0.75rem;
+  .post-list > li {
+    border-top: 1px solid var(--color-border-muted);
+    padding: 20px 0;
   }
-  .lead {
-    color: var(--fg-muted);
-    font-size: 1.1rem;
-    line-height: 1.5;
-    max-width: 600px;
+  .post-list > li:last-child {
+    border-bottom: 1px solid var(--color-border-muted);
   }
-
-  .posts {
-    display: flex;
-    flex-direction: column;
-    gap: 0;
+  .post-list > li + li { margin-top: 0; }
+  .post-title {
+    font-size: 1.2em !important;
+    margin: 0 0 6px !important;
+    border: none !important;
+    padding: 0 !important;
   }
-
-  .post-card {
-    border-top: 1px solid var(--border);
-    padding: 2rem 0;
-  }
-  .post-card:last-child {
-    border-bottom: 1px solid var(--border);
-  }
-
-  .post-link {
-    display: block;
-    color: inherit;
-    text-decoration: none;
-  }
-  .post-link:hover h2 {
-    color: var(--accent);
-  }
-
-  .post-card h2 {
-    font-size: 1.4rem;
-    margin: 0 0 0.5rem;
-    border-top: none;
-    padding-top: 0;
-    transition: color 0.15s;
-  }
-
-  .meta {
-    color: var(--fg-muted);
-    font-size: 0.85rem;
-    margin-bottom: 1rem;
-    font-family: "JetBrains Mono", monospace;
-  }
-  .meta .arxiv {
-    color: var(--accent);
-  }
-  .meta .dot {
-    margin: 0 0.5rem;
-    opacity: 0.5;
-  }
-
-  .tldr {
-    font-size: 1rem;
-    color: var(--fg);
-    margin-bottom: 1rem;
-  }
-
-  .tags {
-    display: flex;
-    gap: 0.4rem;
-    flex-wrap: wrap;
-  }
-  .tag {
-    font-family: "JetBrains Mono", monospace;
-    font-size: 0.8rem;
-    color: var(--fg-muted);
-    background: var(--bg-elev);
-    padding: 0.15rem 0.5rem;
-    border-radius: 3px;
-    border: 1px solid var(--border);
+  .post-title a { color: var(--color-fg); text-decoration: none; }
+  .post-title a:hover { color: var(--color-accent); }
+  .post-tldr {
+    margin: 8px 0 10px !important;
+    color: var(--color-fg);
   }
 </style>

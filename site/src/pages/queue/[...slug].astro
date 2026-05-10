@@ -1,0 +1,93 @@
+---
+import { getCollection, render } from "astro:content";
+import Layout from "../../layouts/Layout.astro";
+
+export async function getStaticPaths() {
+  const items = await getCollection("queue");
+  return items.map((item) => ({
+    params: { slug: item.id },
+    props: { item },
+  }));
+}
+
+const { item } = Astro.props;
+const { Content } = await render(item);
+const critique = item.data.critique;
+const issues = critique?.issues ?? [];
+---
+
+<Layout title={`[черга] ${item.data.title} — Frontline`} description={item.data.tldr}>
+  <p class="meta">
+    <a href="/queue/">← Черга</a>
+    <span class="dot">·</span>
+    <span class="arxiv">arXiv:{item.data.arxiv_id}</span>
+    <span class="dot">·</span>
+    <span>{item.data.publish_date}</span>
+  </p>
+
+  <div class="alert alert-attention">
+    <strong>⚠ Цей пост у черзі на ревʼю</strong>
+    Не пройшов auto-publish gate. Критик-LLM повернув verdict
+    <code>{critique?.verdict ?? "—"}</code>, recommendation
+    <code>{critique?.recommendation ?? "—"}</code>.
+    Якщо хочете опублікувати: перенесіть файл з <code>site/src/content/queue/</code> у <code>site/src/content/posts/</code>.
+  </div>
+
+  <h1>{item.data.title}</h1>
+
+  <blockquote>
+    <strong>TL;DR.</strong> {item.data.tldr}
+  </blockquote>
+
+  <p class="tag-list">
+    {item.data.tags.map((tag) => <span class="tag">{tag}</span>)}
+  </p>
+
+  {issues.length > 0 && (
+    <>
+      <h2>Зауваження критика ({issues.length})</h2>
+      <ol class="issues">
+        {issues.map((issue) => (
+          <li>
+            <p>
+              <span class={`severity-pill severity-${issue.severity}`}>
+                {issue.severity}
+              </span>
+              <code>{issue.category}</code>
+            </p>
+            <p><strong>{issue.description}</strong></p>
+            <blockquote>{issue.evidence}</blockquote>
+          </li>
+        ))}
+      </ol>
+      {critique?.regenerate_feedback && (
+        <>
+          <h3>Рекомендація для regenerate</h3>
+          <blockquote>{critique.regenerate_feedback}</blockquote>
+        </>
+      )}
+    </>
+  )}
+
+  <h2>Текст резюме</h2>
+
+  <Content />
+
+  <hr />
+
+  <p>
+    <strong>Автори:</strong>{" "}
+    <span class="muted">{item.data.authors.join(", ")}</span>
+  </p>
+  <p>
+    <a href={item.data.arxiv_url} target="_blank" rel="noopener"
+      >Читати оригінал на arXiv ↗</a
+    >
+  </p>
+</Layout>
+
+<style>
+  .muted { color: var(--color-fg-muted); }
+  .issues { padding-left: 1.5em; }
+  .issues > li + li { margin-top: 16px !important; }
+</style>

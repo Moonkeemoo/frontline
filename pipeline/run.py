@@ -111,7 +111,12 @@ async def run_pipeline(
                 stats["published"] += 1
             elif crit.critique.recommendation == "queue_for_review":
                 if not dry_run:
-                    post_path = write_post(paper, gen.summary, output_dir=queue_dir)
+                    post_path = write_post(
+                        paper,
+                        gen.summary,
+                        output_dir=queue_dir,
+                        critique=crit.critique,
+                    )
                 stats["queued"] += 1
             else:  # regenerate / reject
                 stats["rejected"] += 1
@@ -132,7 +137,9 @@ def main(argv: list[str] | None = None) -> int:
 
     parser = argparse.ArgumentParser(prog="frontline", description="Frontline pipeline")
     parser.add_argument("--output-dir", type=Path, default=Path("site/src/content/posts"))
-    parser.add_argument("--queue-dir", type=Path, default=Path(".runs/queue"))
+    parser.add_argument(
+        "--queue-dir", type=Path, default=Path("site/src/content/queue")
+    )
     parser.add_argument(
         "--log-path", type=Path, default=Path("pipeline/data/published.jsonl")
     )

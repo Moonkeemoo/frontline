@@ -32,6 +32,18 @@ def test_render_post_markdown_has_valid_frontmatter(sample_paper, sample_summary
     assert parsed["title"] == sample_summary.title_ua
     assert parsed["arxiv_id"] == sample_paper.arxiv_id
     assert parsed["tags"] == sample_summary.tags
+    assert "critique" not in parsed.metadata
+
+
+def test_render_post_markdown_embeds_critique_when_provided(
+    sample_paper, sample_summary, sample_critique_reject
+):
+    md = render_post_markdown(sample_paper, sample_summary, critique=sample_critique_reject)
+    parsed = frontmatter.loads(md)
+    assert "critique" in parsed.metadata
+    assert parsed["critique"]["verdict"] == "reject"
+    assert len(parsed["critique"]["issues"]) == 1
+    assert parsed["critique"]["issues"][0]["category"] == "hallucination"
 
 
 def test_render_post_lists_all_limitations(sample_paper, sample_summary):

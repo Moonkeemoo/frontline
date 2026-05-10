@@ -51,7 +51,7 @@ jobs:
         run: |
           uv run python -m pipeline.run \
             --output-dir site/src/content/posts \
-            --queue-dir .runs/queue \
+            --queue-dir site/src/content/queue \
             --log-path pipeline/data/published.jsonl
 
       - name: Commit & push new posts
@@ -59,7 +59,7 @@ jobs:
         run: |
           git config user.name "frontline-bot"
           git config user.email "bot@frontline.local"
-          git add site/src/content/posts/ pipeline/data/ .runs/queue/ 2>/dev/null || true
+          git add site/src/content/ pipeline/data/ 2>/dev/null || true
           if git diff --cached --quiet; then
             echo "::notice::No new content this run."
           else
