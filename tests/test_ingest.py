@@ -1,6 +1,5 @@
 """Tests for paper ingestion."""
 
-import pytest
 from pytest_httpx import HTTPXMock
 
 from pipeline.ingest import (
@@ -9,7 +8,6 @@ from pipeline.ingest import (
     fetch_arxiv_rss,
     fetch_huggingface_daily,
 )
-
 
 HF_RESPONSE = [
     {
@@ -42,7 +40,7 @@ ARXIV_RSS_XML = """<?xml version="1.0" encoding="utf-8"?>
   <item>
     <title>Sample Paper Title</title>
     <link>http://arxiv.org/abs/2511.54321v1</link>
-    <description>&lt;p&gt;Authors: A. Author, B. Author&lt;/p&gt;&lt;p&gt;This is the abstract body.&lt;/p&gt;</description>
+    <description>&lt;p&gt;Authors: A. A.&lt;/p&gt;&lt;p&gt;abstract body.&lt;/p&gt;</description>
     <author>A. Author, B. Author</author>
     <pubDate>Fri, 09 May 2026 00:00:00 GMT</pubDate>
   </item>

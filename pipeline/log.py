@@ -1,7 +1,7 @@
 """Append-only log of pipeline outcomes — used for idempotency and audit."""
 
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from .models import PipelineResult
@@ -35,7 +35,7 @@ class PublishedLog:
                 result.critique.recommendation if result.critique else None
             ),
             "published": result.published,
-            "logged_at": datetime.now(timezone.utc).isoformat(),
+            "logged_at": datetime.now(UTC).isoformat(),
             "post_path": str(post_path) if post_path else None,
             "cost_usd": result.cost_usd,
             "error": result.error,

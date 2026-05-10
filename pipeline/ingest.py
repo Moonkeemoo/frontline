@@ -1,7 +1,7 @@
 """Ingest papers from HuggingFace Papers daily and arXiv RSS feeds."""
 
 import re
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import feedparser
 import httpx
@@ -36,7 +36,9 @@ async def fetch_huggingface_daily(
         if not arxiv_id:
             continue
         authors = [
-            a["name"] for a in paper_data.get("authors", []) if isinstance(a, dict) and a.get("name")
+            a["name"]
+            for a in paper_data.get("authors", [])
+            if isinstance(a, dict) and a.get("name")
         ]
         try:
             papers.append(
@@ -120,6 +122,6 @@ def _parse_struct(value) -> datetime | None:
     if not value:
         return None
     try:
-        return datetime(*value[:6], tzinfo=timezone.utc)
+        return datetime(*value[:6], tzinfo=UTC)
     except Exception:
         return None

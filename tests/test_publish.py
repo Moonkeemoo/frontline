@@ -3,7 +3,6 @@
 from datetime import datetime
 
 import frontmatter
-import pytest
 from pytest_httpx import HTTPXMock
 
 from pipeline.publish import (

@@ -1,6 +1,6 @@
 """Shared pytest fixtures."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
@@ -24,7 +24,7 @@ def sample_paper() -> Paper:
             "additional training data."
         ),
         url="https://arxiv.org/abs/2511.12345",
-        submitted_at=datetime(2026, 5, 9, tzinfo=timezone.utc),
+        submitted_at=datetime(2026, 5, 9, tzinfo=UTC),
         source="huggingface_daily",
     )
 
