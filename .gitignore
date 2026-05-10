@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.venv/
+venv/
+.python-version
+
+# Env
+.env
+.env.local
+
+# Tooling
+.ruff_cache/
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# Build output
+dist/
+build/
+
+# Site (Phase 1.5+)
+site/dist/
+site/.astro/
+node_modules/
+
+# Local pipeline runs
+.runs/
+*.log

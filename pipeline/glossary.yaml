@@ -1,0 +1,160 @@
+# Frontline glossary v1
+#
+# Правило для prompt-ів:
+#   1. Якщо термін має `ua_term` — перекладати на UA.
+#   2. Якщо `keep_english: true` — залишати англійською в *курсиві* markdown.
+#   3. Якщо терміна тут немає — preferred default: залишати англійською в курсиві,
+#      якщо це технічний термін без усталеного UA-аналога.
+#
+# Назви бібліотек, моделей, фреймворків (PyTorch, GPT-4, BERT, LangChain) — НЕ перекладаємо НІКОЛИ.
+# Це окреме правило в prompt-і, не в цьому файлі.
+
+terms:
+  # === Усталене UA: перекладаємо ===
+  - en: transformer
+    ua_term: трансформер
+  - en: neural network
+    ua_term: нейронна мережа
+  - en: gradient descent
+    ua_term: градієнтний спуск
+  - en: stochastic gradient descent
+    ua_term: стохастичний градієнтний спуск
+  - en: backpropagation
+    ua_term: зворотне поширення помилки
+  - en: loss function
+    ua_term: функція втрат
+  - en: overfitting
+    ua_term: перенавчання
+  - en: underfitting
+    ua_term: недонавчання
+  - en: regularization
+    ua_term: регуляризація
+  - en: dataset
+    ua_term: датасет
+  - en: training
+    ua_term: тренування
+  - en: model
+    ua_term: модель
+  - en: layer
+    ua_term: шар
+  - en: weight
+    ua_term: вага
+  - en: bias
+    ua_term: зсув
+    note: "у контексті ML параметра (а не упередженості)"
+  - en: convolutional neural network
+    ua_term: згорткова нейронна мережа
+  - en: recurrent neural network
+    ua_term: рекурентна нейронна мережа
+  - en: language model
+    ua_term: мовна модель
+  - en: large language model
+    ua_term: велика мовна модель
+  - en: reinforcement learning
+    ua_term: навчання з підкріпленням
+  - en: supervised learning
+    ua_term: навчання з учителем
+  - en: unsupervised learning
+    ua_term: навчання без учителя
+  - en: hyperparameter
+    ua_term: гіперпараметр
+
+  # === Залишаємо англійською (контестно або без усталеного UA) ===
+  - en: embedding
+    keep_english: true
+    note: "«векторне представлення» громіздке; UA-практики кажуть embedding"
+  - en: attention
+    keep_english: true
+    note: "у контексті attention mechanism; «увага» втрачає термінологічну точність"
+  - en: self-attention
+    keep_english: true
+  - en: cross-attention
+    keep_english: true
+  - en: fine-tuning
+    keep_english: true
+    alt_ua: донавчання
+    note: "обидва вживаються; default — англійською"
+  - en: pre-training
+    keep_english: true
+  - en: prompt
+    keep_english: true
+    note: "«запит/підказка» втрачає сенс у LLM-контексті"
+  - en: prompt engineering
+    keep_english: true
+  - en: tokenization
+    keep_english: true
+  - en: token
+    keep_english: true
+  - en: inference
+    keep_english: true
+    note: "інференс/інференція обидва вживаються; default — англійською"
+  - en: pipeline
+    keep_english: true
+  - en: benchmark
+    keep_english: true
+  - en: state-of-the-art
+    keep_english: true
+    short: SOTA
+  - en: zero-shot
+    keep_english: true
+  - en: few-shot
+    keep_english: true
+  - en: chain-of-thought
+    keep_english: true
+    short: CoT
+  - en: retrieval-augmented generation
+    keep_english: true
+    short: RAG
+  - en: reinforcement learning from human feedback
+    keep_english: true
+    short: RLHF
+  - en: diffusion model
+    keep_english: true
+  - en: hallucination
+    keep_english: true
+    note: "у LLM-контексті; «галюцинація» допустима але рідша"
+  - en: agent
+    keep_english: true
+    note: "у контексті AI-агентів; на загал — «агент»"
+  - en: tool use
+    keep_english: true
+  - en: context window
+    keep_english: true
+  - en: latency
+    keep_english: true
+    alt_ua: затримка
+  - en: throughput
+    keep_english: true
+  - en: quantization
+    keep_english: true
+  - en: distillation
+    keep_english: true
+  - en: pruning
+    keep_english: true
+
+# Phrases не для перекладу взагалі (бренди/проєкти/конференції)
+do_not_translate:
+  - PyTorch
+  - TensorFlow
+  - JAX
+  - Hugging Face
+  - HuggingFace
+  - GPT
+  - BERT
+  - T5
+  - LLaMA
+  - Llama
+  - Claude
+  - Gemini
+  - Mistral
+  - LangChain
+  - LlamaIndex
+  - vLLM
+  - NeurIPS
+  - ICLR
+  - ICML
+  - CVPR
+  - ACL
+  - EMNLP
+  - arXiv
+  - OpenReview
